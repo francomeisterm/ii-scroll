@@ -4,6 +4,7 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.functions
 import QtQuick
+import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -17,6 +18,72 @@ Scope {
     property Component sessionLockSurface: WlSessionLockSurface {
         id: sessionLockSurface
         color: "transparent"
+
+        // Scroll port: upstream leaves the lock surface transparent and lifts the Background
+        // layer to Overlay, which Hyprland draws behind a lock. wlroots/Scroll only shows
+        // lock surfaces (black elsewhere), so draw the blurred wallpaper here instead.
+        Item {
+            id: lockWallpaperBox
+            anchors.fill: parent
+            readonly property string wallpaperPath: {
+                const p = Config.options.background.wallpaperPath;
+                return /\.(mp4|webm|mkv|avi|mov)$/i.test(p) ? Config.options.background.thumbnailPath : p;
+            }
+            Image {
+                id: lockWallpaper
+                anchors.fill: parent
+                source: lockWallpaperBox.wallpaperPath
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: false
+                visible: !Config.options.lock.blur.enable
+            }
+            GaussianBlur {
+                anchors.fill: parent
+                visible: Config.options.lock.blur.enable
+                source: lockWallpaper
+                scale: Config.options.lock.blur.extraZoom
+                radius: Config.options.lock.blur.radius
+                samples: radius * 2 + 1
+            }
+            Rectangle {
+                anchors.fill: parent
+                visible: Config.options.lock.blur.enable
+                color: ColorUtils.transparentize(Appearance.colors.colLayer0, 0.7)
+            }
+            // Upstream shows the Background clock widget (centered) through the lock; draw a
+            // simple one here since the Background layer is hidden while locked on Scroll.
+            Column {
+                visible: Config.options.lock.centerClock
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: -parent.height * 0.08
+                spacing: 4
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: DateTime.time
+                    color: Appearance.colors.colOnLayer0
+                    font.family: Config.options.background.widgets.clock.digital.font.family
+                    font.pixelSize: Config.options.background.widgets.clock.digital.font.size * 1.3
+                    font.weight: Config.options.background.widgets.clock.digital.font.weight
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: DateTime.longDate
+                    color: Appearance.colors.colOnLayer0
+                    font.family: Appearance.font.family.main
+                    font.pixelSize: Appearance.font.pixelSize.huge
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    visible: Config.options.lock.showLockedText
+                    text: Translation.tr("Locked")
+                    color: Appearance.colors.colSubtext
+                    font.family: Appearance.font.family.main
+                    font.pixelSize: Appearance.font.pixelSize.normal
+                }
+            }
+        }
+
         Loader {
             active: GlobalStates.screenLocked
             anchors.fill: parent
