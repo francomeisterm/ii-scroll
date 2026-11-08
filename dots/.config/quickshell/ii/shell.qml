@@ -14,7 +14,7 @@ import QtQuick
 import QtQuick.Window
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
+import qs.modules.compat
 
 ShellRoot {
     id: root

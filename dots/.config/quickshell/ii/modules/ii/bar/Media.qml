@@ -7,7 +7,7 @@ import qs.modules.common.functions
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Services.Mpris
-import Quickshell.Hyprland
+import qs.modules.compat
 
 Item {
     id: root

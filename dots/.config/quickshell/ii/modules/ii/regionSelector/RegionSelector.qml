@@ -4,7 +4,7 @@ import qs.modules.common
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
+import qs.modules.compat
 
 Scope {
     id: root

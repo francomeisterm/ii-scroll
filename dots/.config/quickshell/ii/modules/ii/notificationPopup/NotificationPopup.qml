@@ -6,7 +6,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Hyprland
+import qs.modules.compat
 
 Scope {
     id: notificationPopup

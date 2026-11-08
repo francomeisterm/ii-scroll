@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Scroll port: use the local hyprctl stand-in (scripts/scroll/hyprctl) for monitors/cursorpos
+PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../scroll" && pwd):$PATH"
 
 CONFIG_FILE="$HOME/.config/illogical-impulse/config.json"
 JSON_PATH=".screenRecord.savePath"

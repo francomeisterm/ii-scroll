@@ -8,7 +8,7 @@ import QtQuick.Layouts
 import Quickshell.Io
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Hyprland
+import qs.modules.compat
 
 Scope { // Scope
     id: root

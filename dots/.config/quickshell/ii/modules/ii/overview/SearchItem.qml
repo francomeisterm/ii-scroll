@@ -9,7 +9,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
-import Quickshell.Hyprland
+import qs.modules.compat
 
 RippleButton {
     id: root

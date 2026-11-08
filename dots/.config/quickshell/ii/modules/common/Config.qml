@@ -124,8 +124,8 @@ Singleton {
                 }
                 property JsonObject wallpaperTheming: JsonObject {
                     property bool enableAppsAndShell: true
-                    property bool enableQtApps: true
-                    property bool enableTerminal: true
+                    property bool enableQtApps: false // Scroll port: off by default (needs kde-material-you-colors)
+                    property bool enableTerminal: false // Scroll port: off by default (writes escape codes to every /dev/pts)
                     property JsonObject terminalGenerationProps: JsonObject {
                         property real harmony: 0.6
                         property real harmonizeThreshold: 100

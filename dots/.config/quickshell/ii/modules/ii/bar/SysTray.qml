@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
+import qs.modules.compat
 import Quickshell.Services.SystemTray
 import qs.services
 import qs.modules.common

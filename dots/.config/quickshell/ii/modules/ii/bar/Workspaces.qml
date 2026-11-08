@@ -9,12 +9,12 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
+import qs.modules.compat
 
 ButtonMouseArea {
     id: root
 
-    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)
+    readonly property var monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)
     WorkspaceModel {
         id: wsModel
         monitor: root.monitor

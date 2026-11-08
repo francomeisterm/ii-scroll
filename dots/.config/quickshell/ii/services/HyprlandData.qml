@@ -3,12 +3,16 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import Quickshell.Wayland
-import Quickshell.Hyprland
+import qs.modules.compat
 
 /**
- * Provides access to some Hyprland data not available in Quickshell.Hyprland.
+ * Scroll port: same API as upstream's HyprlandData, but built from the sway IPC
+ * snapshots held by the compat Hyprland singleton (get_tree / get_workspaces /
+ * get_outputs) instead of `hyprctl ... -j`. Objects are shaped like hyprctl's JSON.
+ *
+ * Window "address" is "0x" + the sway con id in hex, so the compat dispatcher can
+ * turn "address:0x.." back into [con_id=..].
  */
 Singleton {
     id: root
@@ -24,54 +28,33 @@ Singleton {
 
     // Convenient stuff
 
+    // Quickshell's wlr-foreign-toplevel Toplevel has no con id, so match on
+    // app id + title, preferring the activated/focused state on ties.
+    function clientForToplevel(toplevel) {
+        if (!toplevel)
+            return null;
+        const candidates = root.windowList.filter(w => w.class === toplevel.appId && w.title === toplevel.title);
+        if (candidates.length <= 1)
+            return candidates[0] ?? null;
+        return candidates.find(w => w.focused === toplevel.activated) ?? candidates[0];
+    }
+
+    function addressForToplevel(toplevel) {
+        return root.clientForToplevel(toplevel)?.address ?? "";
+    }
+
     function toplevelsForWorkspace(workspace) {
         return ToplevelManager.toplevels.values.filter(toplevel => {
-            const address = `0x${toplevel.HyprlandToplevel?.address}`;
-            var win = HyprlandData.windowByAddress[address];
-            return win?.workspace?.id === workspace;
-        })
+            return root.clientForToplevel(toplevel)?.workspace?.id === workspace;
+        });
     }
 
     function hyprlandClientsForWorkspace(workspace) {
         return root.windowList.filter(win => win.workspace.id === workspace);
     }
 
-    function clientForToplevel(toplevel) {
-        if (!toplevel || !toplevel.HyprlandToplevel) {
-            return null;
-        }
-        const address = `0x${toplevel?.HyprlandToplevel?.address}`;
-        return root.windowByAddress[address];
-    }
-
-    // Internals
-
-    function updateWindowList() {
-        getClients.running = true;
-    }
-
-    function updateLayers() {
-        getLayers.running = true;
-    }
-
-    function updateMonitors() {
-        getMonitors.running = true;
-    }
-
-    function updateWorkspaces() {
-        getWorkspaces.running = true;
-        getActiveWorkspace.running = true;
-    }
-
-    function updateAll() {
-        updateWindowList();
-        updateMonitors();
-        updateLayers();
-        updateWorkspaces();
-    }
-
     function biggestWindowForWorkspace(workspaceId) {
-        const windowsInThisWorkspace = HyprlandData.windowList.filter(w => w.workspace.id == workspaceId);
+        const windowsInThisWorkspace = root.windowList.filter(w => w.workspace.id == workspaceId);
         return windowsInThisWorkspace.reduce((maxWin, win) => {
             const maxArea = (maxWin?.size?.[0] ?? 0) * (maxWin?.size?.[1] ?? 0);
             const winArea = (win?.size?.[0] ?? 0) * (win?.size?.[1] ?? 0);
@@ -79,88 +62,126 @@ Singleton {
         }, null);
     }
 
-    Component.onCompleted: {
-        updateAll();
+    function updateAll() {
+        Hyprland.refresh();
+    }
+
+    // Internals
+
+    function _rebuild() {
+        const outputs = Hyprland.swayOutputs.filter(o => o.active !== false && !o.name.startsWith("__"));
+        const swayWs = Hyprland.swayWorkspaces;
+
+        // Monitors
+        const mons = outputs.map((o, i) => {
+            const cur = swayWs.find(w => w.output === o.name && w.visible);
+            const r = cur?.rect ?? o.rect;
+            return {
+                id: i,
+                name: o.name,
+                description: `${o.make ?? ""} ${o.model ?? ""}`.trim(),
+                x: o.rect.x,
+                y: o.rect.y,
+                width: Math.round(o.rect.width * o.scale),
+                height: Math.round(o.rect.height * o.scale),
+                scale: o.scale,
+                transform: 0,
+                focused: o.focused,
+                reserved: [r.x - o.rect.x, r.y - o.rect.y, (o.rect.x + o.rect.width) - (r.x + r.width), (o.rect.y + o.rect.height) - (r.y + r.height)],
+                activeWorkspace: cur ? { id: cur.num, name: cur.name } : { id: -1, name: "" },
+                specialWorkspace: { id: 0, name: "" },
+                hdr: o.hdr ?? false
+            };
+        });
+        const monIdByName = {};
+        mons.forEach(m => monIdByName[m.name] = m.id);
+
+        // Windows: walk the tree, remembering the enclosing output and workspace
+        const wins = [];
+        let focusOrder = 0;
+        function walk(node, outName, ws) {
+            if (!node)
+                return;
+            if (node.type === "output")
+                outName = node.name;
+            if (node.type === "workspace")
+                ws = node;
+            const isWin = (node.type === "con" || node.type === "floating_con") && (node.app_id !== undefined || node.window_properties !== undefined) && (node.pid ?? 0) > 0;
+            if (isWin) {
+                const scratch = ws?.name === "__i3_scratch";
+                const wsNum = scratch ? -99 : (ws?.num ?? -1);
+                wins.push({
+                    address: `0x${node.id.toString(16)}`,
+                    conId: node.id,
+                    mapped: true,
+                    hidden: !node.visible,
+                    at: [node.rect.x, node.rect.y],
+                    size: [node.rect.width, node.rect.height],
+                    workspace: { id: wsNum, name: scratch ? "special:scratchpad" : (ws?.name ?? "") },
+                    floating: node.type === "floating_con",
+                    pseudo: false,
+                    monitor: monIdByName[outName] ?? -1,
+                    class: node.app_id ?? node.window_properties?.class ?? "",
+                    title: node.name ?? "",
+                    initialClass: node.app_id ?? node.window_properties?.class ?? "",
+                    initialTitle: node.name ?? "",
+                    pid: node.pid,
+                    xwayland: node.shell === "xwayland",
+                    pinned: node.sticky ?? false,
+                    fullscreen: (node.fullscreen_mode ?? 0) > 0 ? 2 : 0,
+                    fullscreenClient: node.fullscreen_mode ?? 0,
+                    focused: node.focused,
+                    focusHistoryID: node.focused ? 0 : ++focusOrder,
+                    swallowing: "0x0",
+                    tags: []
+                });
+            }
+            (node.nodes ?? []).forEach(n => walk(n, outName, ws));
+            (node.floating_nodes ?? []).forEach(n => walk(n, outName, ws));
+        }
+        walk(Hyprland.swayTree, "", null);
+
+        root.windowList = wins;
+        const byAddr = {};
+        wins.forEach(w => byAddr[w.address] = w);
+        root.windowByAddress = byAddr;
+        root.addresses = wins.map(w => w.address);
+
+        // Workspaces
+        const wss = swayWs.filter(w => w.num >= 1 && w.num <= 100).map(w => {
+            const inWs = wins.filter(x => x.workspace.id === w.num);
+            const focusedWin = inWs.find(x => x.focused) ?? inWs[0];
+            return {
+                id: w.num,
+                name: w.name,
+                monitor: w.output,
+                monitorID: monIdByName[w.output] ?? -1,
+                windows: inWs.length,
+                hasfullscreen: inWs.some(x => x.fullscreen > 0),
+                lastwindow: focusedWin?.address ?? "0x0",
+                lastwindowtitle: focusedWin?.title ?? ""
+            };
+        });
+        root.workspaces = wss;
+        const byId = {};
+        wss.forEach(w => byId[w.id] = w);
+        root.workspaceById = byId;
+        root.workspaceIds = wss.map(w => w.id);
+        const fw = swayWs.find(w => w.focused);
+        root.activeWorkspace = fw ? (byId[fw.num] ?? { id: fw.num, name: fw.name, monitor: fw.output }) : null;
+
+        root.monitors = mons;
     }
 
     Connections {
         target: Hyprland
-
-        function onRawEvent(event) {
-            // console.log("Hyprland raw event:", event.name);
-            if (["openlayer", "closelayer", "screencast"].includes(event.name)) return;
-            updateAll()
+        function onSwayTreeChanged() {
+            root._rebuild();
         }
     }
 
-    Process {
-        id: getClients
-        command: ["hyprctl", "clients", "-j"]
-        stdout: StdioCollector {
-            id: clientsCollector
-            onStreamFinished: {
-                root.windowList = JSON.parse(clientsCollector.text)
-                let tempWinByAddress = {};
-                for (var i = 0; i < root.windowList.length; ++i) {
-                    var win = root.windowList[i];
-                    tempWinByAddress[win.address] = win;
-                }
-                root.windowByAddress = tempWinByAddress;
-                root.addresses = root.windowList.map(win => win.address);
-            }
-        }
-    }
-
-    Process {
-        id: getMonitors
-        command: ["hyprctl", "monitors", "-j"]
-        stdout: StdioCollector {
-            id: monitorsCollector
-            onStreamFinished: {
-                root.monitors = JSON.parse(monitorsCollector.text);
-            }
-        }
-    }
-
-    Process {
-        id: getLayers
-        command: ["hyprctl", "layers", "-j"]
-        stdout: StdioCollector {
-            id: layersCollector
-            onStreamFinished: {
-                root.layers = JSON.parse(layersCollector.text);
-            }
-        }
-    }
-
-    Process {
-        id: getWorkspaces
-        command: ["hyprctl", "workspaces", "-j"]
-        stdout: StdioCollector {
-            id: workspacesCollector
-            onStreamFinished: {
-                var rawWorkspaces = JSON.parse(workspacesCollector.text);
-                // Filter out invalid workspace ids (e.g. lock-screen temp workspace 2147483647 - N)
-                root.workspaces = rawWorkspaces.filter(ws => ws.id >= 1 && ws.id <= 100);
-                let tempWorkspaceById = {};
-                for (var i = 0; i < root.workspaces.length; ++i) {
-                    var ws = root.workspaces[i];
-                    tempWorkspaceById[ws.id] = ws;
-                }
-                root.workspaceById = tempWorkspaceById;
-                root.workspaceIds = root.workspaces.map(ws => ws.id);
-            }
-        }
-    }
-
-    Process {
-        id: getActiveWorkspace
-        command: ["hyprctl", "activeworkspace", "-j"]
-        stdout: StdioCollector {
-            id: activeWorkspaceCollector
-            onStreamFinished: {
-                root.activeWorkspace = JSON.parse(activeWorkspaceCollector.text);
-            }
-        }
+    Component.onCompleted: {
+        if (Hyprland.swayTree)
+            root._rebuild();
     }
 }

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Scroll port: use the local hyprctl stand-in (scripts/scroll/hyprctl) for monitors/cursorpos
+PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../scroll" && pwd):$PATH"
 
 QUICKSHELL_CONFIG_NAME="ii"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -56,7 +58,8 @@ post_process() {
     local wallpaper_path="$3"
 
     handle_kde_material_you_colors &
-    "$SCRIPT_DIR/code/material-code-set-color.sh" &
+    # Scroll port: don't rewrite VS Code-family settings.json files behind the user's back.
+    # "$SCRIPT_DIR/code/material-code-set-color.sh" &
 }
 
 check_and_prompt_upscale() {

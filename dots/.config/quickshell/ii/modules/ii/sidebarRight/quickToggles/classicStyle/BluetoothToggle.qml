@@ -7,7 +7,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Io
-import Quickshell.Hyprland
+import qs.modules.compat
 
 QuickToggleButton {
     id: root

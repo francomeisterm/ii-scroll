@@ -3,7 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
+import qs.modules.compat
 import qs.modules.common
 
 /**
@@ -72,48 +72,41 @@ Singleton {
         }
     }
 
-    // Find out available layouts and current active layout. Should only be necessary on init
+    // Scroll port: layouts come from sway IPC get_inputs (names, not codes; the code is
+    // looked up from base.lst by updateLayoutCode()), refreshed on "input" events.
     Process {
         id: fetchLayoutsProc
         running: true
-        command: ["hyprctl", "-j", "devices"]
+        command: ["scrollmsg", "-r", "-t", "get_inputs"]
 
         stdout: StdioCollector {
             id: devicesCollector
             onStreamFinished: {
-                const parsedOutput = JSON.parse(devicesCollector.text);
-                const hyprlandKeyboard = parsedOutput["keyboards"].find(kb => kb.main === true);
-                root.layoutCodes = hyprlandKeyboard["layout"].split(",");
-                root.currentLayoutName = hyprlandKeyboard["active_keymap"];
-                // console.log("[HyprlandXkb] Fetched | Layouts (multiple: " + (root.layoutCodes.length > 1) + "): "
-                //     + root.layoutCodes.join(", ") + " | Active: " + root.currentLayoutName);
+                try {
+                    const inputs = JSON.parse(devicesCollector.text);
+                    const keyboards = inputs.filter(i => i.type === "keyboard" && (i.xkb_layout_names ?? []).length > 0);
+                    // Prefer a keyboard with several layouts, else the first one
+                    const kb = keyboards.find(k => k.xkb_layout_names.length > 1) ?? keyboards[0];
+                    if (!kb)
+                        return;
+                    root.layoutCodes = kb.xkb_layout_names;
+                    if (root.currentLayoutName !== kb.xkb_active_layout_name) {
+                        root.currentLayoutName = kb.xkb_active_layout_name ?? "";
+                        if (root.layoutCodes.length > 1)
+                            Config.options.osk.layout = root.currentLayoutName.split(" (")[0];
+                    }
+                } catch (e) {
+                    console.warn("[HyprlandXkb] bad get_inputs output:", e);
+                }
             }
         }
     }
 
-    // Update the layout name when it changes
     Connections {
         target: Hyprland
         function onRawEvent(event) {
-            if (event.name === "activelayout") {
-                if (root.needsLayoutRefresh) {
-                    root.needsLayoutRefresh = false;
-                    fetchLayoutsProc.running = true;
-                }
-
-                // If there's only one layout, the updated layout is always the same
-                if (root.layoutCodes.length <= 1) return;
-
-                // Update when layout might have changed
-                const dataString = event.data;
-                root.currentLayoutName = dataString.substring(dataString.indexOf(",") + 1);
-
-                // Update layout for on-screen keyboard (osk)
-                Config.options.osk.layout = root.currentLayoutName.split(" (")[0];
-            } else if (event.name == "configreloaded") {
-                // Mark layout code list to be updated when config is reloaded
-                root.needsLayoutRefresh = true;
-            }
+            if (event.name === "input")
+                fetchLayoutsProc.running = true;
         }
     }
 }

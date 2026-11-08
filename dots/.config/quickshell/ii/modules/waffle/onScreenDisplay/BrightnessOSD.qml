@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
+import qs.modules.compat
 import qs.services
 import qs.modules.waffle.looks
 

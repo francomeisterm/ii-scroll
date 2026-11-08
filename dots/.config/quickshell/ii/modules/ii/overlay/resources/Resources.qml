@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
+import qs.modules.compat
 import Qt5Compat.GraphicalEffects
 import qs
 import qs.services

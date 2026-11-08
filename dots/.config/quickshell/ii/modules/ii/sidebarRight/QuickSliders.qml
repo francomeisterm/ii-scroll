@@ -6,7 +6,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
+import qs.modules.compat
 import Quickshell.Services.UPower
 
 Rectangle {

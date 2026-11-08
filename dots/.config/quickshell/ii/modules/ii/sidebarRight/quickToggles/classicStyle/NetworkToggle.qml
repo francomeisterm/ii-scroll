@@ -7,7 +7,7 @@ import qs
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
+import qs.modules.compat
 
 QuickToggleButton {
     toggled: Network.wifiStatus !== "disabled"

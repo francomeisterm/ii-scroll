@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Hyprland
+import qs.modules.compat
 import qs
 import qs.services
 import qs.modules.common
@@ -94,7 +94,7 @@ WMouseAreaButton {
                         }
                         delegate: ScreencopyView {
                             required property var modelData
-                            readonly property var hyprlandWindowData: HyprlandData.windowByAddress[`0x${modelData.HyprlandToplevel?.address}`]
+                            readonly property var hyprlandWindowData: HyprlandData.clientForToplevel(modelData)
                             captureSource: modelData
                             live: true
                             width: hyprlandWindowData?.size[0] * root.windowScale

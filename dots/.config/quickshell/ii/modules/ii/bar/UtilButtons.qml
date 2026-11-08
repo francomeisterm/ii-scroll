@@ -4,7 +4,7 @@ import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
+import qs.modules.compat
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 

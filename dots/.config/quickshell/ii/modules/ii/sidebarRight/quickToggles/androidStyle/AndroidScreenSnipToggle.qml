@@ -5,7 +5,7 @@ import qs.modules.common.widgets
 import qs.services
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
+import qs.modules.compat
 
 AndroidQuickToggleButton {
     toggleModel: ScreenSnipToggle {}

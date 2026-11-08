@@ -6,7 +6,7 @@ import QtQuick
 import Quickshell.Io
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Hyprland
+import qs.modules.compat
 
 Scope { // Scope
     id: root
@@ -54,8 +54,9 @@ Scope { // Scope
     }
 
     function togglePin() {
-        if (!root.pin) pinWithFunnyHyprlandWorkaroundProc.doIt()
-        else root.pin = !root.pin;
+        // Scroll port: upstream dodges the cursor away via hyprctl first (a Hyprland focus
+        // workaround); a plain toggle is enough on Scroll.
+        root.pin = !root.pin;
     }
 
     Component.onCompleted: {

@@ -5,7 +5,7 @@ import qs.modules.common.widgets
 import qs.modules.common.functions
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Hyprland
+import qs.modules.compat
 
 RippleButton {
     id: root

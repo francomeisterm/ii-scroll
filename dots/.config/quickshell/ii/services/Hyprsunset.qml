@@ -4,7 +4,7 @@ import QtQuick
 import qs.modules.common
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
+import qs.modules.compat
 
 /**
  * Simple hyprsunset service with automatic mode.
@@ -83,12 +83,42 @@ Singleton {
         }
     }
 
-    function startHyprsunset() {
-        Quickshell.execDetached(["bash", "-c", `pidof hyprsunset || hyprsunset`]);
+    // ---- Scroll port: gammastep (wlr-gamma-control) instead of hyprsunset ----
+    // One long-running `gammastep -O` process holds the temperature/brightness; the
+    // gamma ramp is dropped as soon as it exits, so "off" = not running.
+    // Note: untested on the HDR output (Scroll's patched wlroots), same as DMS's night light.
+
+    readonly property bool needsGammastep: root.temperatureActive || root.gamma < 100
+    readonly property int effectiveTemperature: root.temperatureActive ? root.colorTemperature : 6500
+
+    Process {
+        id: gammastepProc
+        running: root.needsGammastep
+        command: ["gammastep", "-m", "wayland", "-P", "-O", `${root.effectiveTemperature}`, "-b", `${(root.gamma / 100).toFixed(2)}`]
+        onExited: (code, status) => {
+            if (root.needsGammastep && code !== 0)
+                console.warn(`[Hyprsunset] gammastep exited with ${code} (is it installed?)`);
+        }
     }
 
+    function restartGammastep() {
+        if (!root.needsGammastep)
+            return;
+        gammastepProc.running = false;
+        restartTimer.restart();
+    }
+
+    Timer {
+        id: restartTimer
+        interval: 50
+        onTriggered: gammastepProc.running = root.needsGammastep
+    }
+
+    onEffectiveTemperatureChanged: restartGammastep()
+
+    function startHyprsunset() {}
+
     function load() {
-        root.startHyprsunset();
         root.ensureState();
     }
 
@@ -104,47 +134,19 @@ Singleton {
 
     function enableTemperature() {
         root.temperatureActive = true;
-
-        // console.log("[Hyprsunset] Enabling");
-        root.startHyprsunset();
-        Quickshell.execDetached(["bash", "-c", `hyprctl hyprsunset temperature ${root.colorTemperature}`]);
     }
 
     function disableTemperature() {
         root.temperatureActive = false;
-        // console.log("[Hyprsunset] Disabling");
-        Quickshell.execDetached(["bash", "-c", `hyprctl hyprsunset temperature ${root.defaultColorTemperature}`]);
     }
 
     function setGamma(gamma) {
         root.gamma = Math.max(root.gammaLowerLimit, Math.min(100, gamma));
-
         root.gammaChangeAttempt();
-
-        root.startHyprsunset();
-        Quickshell.execDetached(["bash", "-c", `hyprctl hyprsunset gamma ${root.gamma}`]);
+        root.restartGammastep();
     }
 
-    function fetchState() {
-        fetchProc.running = true;
-    }
-
-    Process {
-        id: fetchProc
-        running: true
-        command: ["bash", "-c", "hyprctl hyprsunset temperature"]
-        stdout: StdioCollector {
-            id: stateCollector
-            onStreamFinished: {
-                const output = stateCollector.text.trim();
-                if (output.length == 0 || output.startsWith("Couldn't"))
-                    root.temperatureActive = false;
-                else
-                    root.temperatureActive = (output != root.defaultColorTemperature); // 6000 is the default when off
-                // console.log("[Hyprsunset] Fetched state:", output, "->", root.temperatureActive);
-            }
-        }
-    }
+    function fetchState() {}
 
     function toggleTemperature(active = undefined) {
         if (root.manualActive === undefined) {
@@ -161,12 +163,5 @@ Singleton {
         }
     }
 
-    // Change temp
-    Connections {
-        target: Config.options.light.night
-        function onColorTemperatureChanged() {
-            if (!root.temperatureActive) return;
-            Quickshell.execDetached(["hyprctl", "hyprsunset", "temperature", `${Config.options.light.night.colorTemperature}`]);
-        }
-    }
+    // Change temp: colorTemperature is bound to the config, effectiveTemperature follows
 }

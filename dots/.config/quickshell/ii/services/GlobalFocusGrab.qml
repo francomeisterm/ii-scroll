@@ -2,7 +2,7 @@ pragma Singleton
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
+import qs.modules.compat
 
 /**
  * Manages a HyprlandFocusGrab that's to be shared by all windows.

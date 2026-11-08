@@ -1,13 +1,13 @@
 import QtQuick
 import Quickshell.Wayland
-import Quickshell.Hyprland
+import qs.modules.compat
 import qs.services
 import qs.modules.common as C
 
 NestableObject {
     id: root
 
-    required property HyprlandMonitor monitor
+    required property var monitor
     readonly property var liveMonitorData: HyprlandData.monitors.find(m => m.id === monitor.id)
     readonly property Toplevel activeWindow: ToplevelManager.activeToplevel
     readonly property int activeWorkspace: monitor?.activeWorkspace?.id ?? 1
