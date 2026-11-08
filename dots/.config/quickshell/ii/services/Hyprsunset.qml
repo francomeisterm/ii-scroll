@@ -96,7 +96,8 @@ Singleton {
         running: root.needsGammastep
         command: ["gammastep", "-m", "wayland", "-P", "-O", `${root.effectiveTemperature}`, "-b", `${(root.gamma / 100).toFixed(2)}`]
         onExited: (code, status) => {
-            if (root.needsGammastep && code !== 0)
+            // 15 = our own SIGTERM on restart/stop
+            if (root.needsGammastep && code !== 0 && code !== 15)
                 console.warn(`[Hyprsunset] gammastep exited with ${code} (is it installed?)`);
         }
     }

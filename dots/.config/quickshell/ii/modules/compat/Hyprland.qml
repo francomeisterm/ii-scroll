@@ -171,11 +171,25 @@ Singleton {
     Timer {
         id: refreshTimer
         interval: 15
-        onTriggered: query.running = true
+        onTriggered: {
+            // Don't drop an event that lands while a query is running: re-query after it
+            if (query.running)
+                root._dirty = true;
+            else
+                query.running = true;
+        }
     }
+
+    property bool _dirty: false
 
     Process {
         id: query
+        onExited: {
+            if (root._dirty) {
+                root._dirty = false;
+                query.running = true;
+            }
+        }
         command: ["sh", "-c", 'printf \'{"ws":%s,"out":%s,"tree":%s}\' "$(scrollmsg -s \"${SWAYSOCK:-$SCROLLSOCK}\" -r -t get_workspaces)" "$(scrollmsg -s \"${SWAYSOCK:-$SCROLLSOCK}\" -r -t get_outputs)" "$(scrollmsg -s \"${SWAYSOCK:-$SCROLLSOCK}\" -r -t get_tree)"']
         stdout: StdioCollector {
             onStreamFinished: {
