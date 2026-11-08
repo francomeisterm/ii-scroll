@@ -114,7 +114,10 @@ Singleton {
         onTriggered: gammastepProc.running = root.needsGammastep
     }
 
-    onEffectiveTemperatureChanged: restartGammastep()
+    onEffectiveTemperatureChanged: {
+        console.warn(`[Hyprsunset] temperature -> ${root.effectiveTemperature}`);
+        restartGammastep();
+    }
 
     function startHyprsunset() {}
 
