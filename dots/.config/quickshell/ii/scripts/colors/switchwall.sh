@@ -39,12 +39,16 @@ handle_kde_material_you_colors() {
 pre_process() {
     local mode_flag="$1"
     # Set GNOME color-scheme if mode_flag is dark or light
+    # Scroll port: only flip the GTK theme between adw-gtk3 variants if that's what's in use,
+    # so a different theme the user picked is left alone. color-scheme is always set.
+    local gtk_theme
+    gtk_theme=$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'")
     if [[ "$mode_flag" == "dark" ]]; then
         gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+        [[ "$gtk_theme" == adw-gtk3* ]] && gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
     elif [[ "$mode_flag" == "light" ]]; then
         gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
-        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+        [[ "$gtk_theme" == adw-gtk3* ]] && gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
     fi
 
     if [ ! -d "$CACHE_DIR"/user/generated ]; then
