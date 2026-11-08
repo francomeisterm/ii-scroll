@@ -104,7 +104,9 @@ check_and_prompt_upscale() {
 }
 
 CUSTOM_DIR="$XDG_CONFIG_HOME/hypr/custom"
-RESTORE_SCRIPT_DIR="$CUSTOM_DIR/scripts"
+# Scroll port: no ~/.config/hypr here; keep the video-wallpaper restore script in ii's state dir
+RESTORE_SCRIPT_DIR="$STATE_DIR/user/scroll"
+mkdir -p "$RESTORE_SCRIPT_DIR"
 RESTORE_SCRIPT="$RESTORE_SCRIPT_DIR/__restore_video_wallpaper.sh"
 THUMBNAIL_DIR="$RESTORE_SCRIPT_DIR/mpvpaper_thumbnails"
 VIDEO_OPTS="no-audio loop hwdec=auto scale=bilinear interpolation=no video-sync=display-resample panscan=1.0 video-scale-x=1.0 video-scale-y=1.0 video-align-x=0.5 video-align-y=0.5 load-scripts=no"
@@ -306,7 +308,8 @@ switch() {
         [[ "$term_fg_boost" != "null" && -n "$term_fg_boost" ]] && generate_colors_material_args+=(--term_fg_boost "$term_fg_boost")
     fi
 
-    matugen "${matugen_args[@]}"
+    # Scroll port: ii-only matugen config (writes only under ~/.local/state/quickshell), never ~/.config/matugen
+    matugen -c "$SCRIPT_DIR/matugen/config.toml" "${matugen_args[@]}"
     source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
     python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
         > "$STATE_DIR"/user/generated/material_colors.scss

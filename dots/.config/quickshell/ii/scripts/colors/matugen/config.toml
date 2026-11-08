@@ -1,0 +1,21 @@
+# ii-on-Scroll: trimmed matugen config (tested with matugen 4.2.0, repo pkg).
+# Only ii-internal outputs under ~/.local/state/quickshell. gtk3/gtk4, hypr,
+# hyprlock and fuzzel outputs are dropped on purpose.
+# input_path is relative to THIS file's directory (verified on 4.2.0), so keep
+# templates/ next to it, or switch to '~/.config/matugen/templates/...' on install.
+# Template syntax ({{colors.X.default.hex}}, {{image}}) is unchanged from upstream.
+
+[config]
+version_check = false
+
+[templates.m3colors]
+input_path = 'templates/colors.json'
+output_path = '~/.local/state/quickshell/user/generated/colors.json'
+
+[templates.kde_colors]
+input_path = 'templates/kde/color.txt'
+output_path = '~/.local/state/quickshell/user/generated/color.txt'
+
+[templates.wallpaper]
+input_path = 'templates/wallpaper.txt'
+output_path = '~/.local/state/quickshell/user/generated/wallpaper/path.txt'
