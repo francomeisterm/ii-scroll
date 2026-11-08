@@ -15,7 +15,7 @@ import qs.modules.compat
  * Output objects mimic hyprctl's: { key, modmask, description: "Category: text" }.
  * Category = the nearest preceding "### Heading" comment. Text = a "#! text" comment
  * directly above the bindsym if there is one, otherwise a cleaned-up command.
- * Includes are not followed (get_config returns the main file only).
+ * Files pulled in with `include` are read too (get_config returns the main file only).
  */
 Singleton {
     id: root
@@ -99,12 +99,13 @@ Singleton {
     Process {
         id: getKeybinds
         running: true
-        command: ["sh", "-c", 'scrollmsg -s "${SWAYSOCK:-$SCROLLSOCK}" -r -t get_config']
+        // Main config from IPC, then every `include` file it names (get_config has the main file only)
+        command: ["sh", "-c", 'cfg="$(scrollmsg -s "${SWAYSOCK:-$SCROLLSOCK}" -r -t get_config | jq -r .config)"; printf "%s\\n" "$cfg"; printf "%s\\n" "$cfg" | sed -nE "s/^[[:space:]]*include[[:space:]]+//p" | while read -r f; do f="${f/#\\~/$HOME}"; case "$f" in /*) ;; *) f="$HOME/.config/scroll/$f" ;; esac; cat "$f" 2>/dev/null; done']
 
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    root.keybinds = root.parse(JSON.parse(text).config ?? "");
+                    root.keybinds = root.parse(text);
                     var groups = [];
                     for (var i = 0; i < root.keybinds.length; i++) {
                         var bind = root.keybinds[i].description;

@@ -55,10 +55,12 @@ Singleton {
 
     function _wsArg(ws) {
         const s = String(ws).replace(/^"|"$/g, "");
-        if (s === "r+1" || s === "e+1" || s === "+1")
-            return "next_on_output";
-        if (s === "r-1" || s === "e-1" || s === "-1")
-            return "prev_on_output";
+        // Hyprland's r±1 is numeric (and creates the workspace), unlike sway's next/prev
+        const rel = /^[re]?([+-]\d+)$/.exec(s);
+        if (rel) {
+            const cur = root.focusedWorkspace?.id ?? root.focusedMonitor?.activeWorkspace?.id ?? 1;
+            return `number ${Math.max(1, cur + parseInt(rel[1]))}`;
+        }
         if (/^-?\d+$/.test(s))
             return `number ${s}`;
         return `"${s}"`;
