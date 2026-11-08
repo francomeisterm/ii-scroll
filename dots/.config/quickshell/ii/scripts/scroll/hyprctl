@@ -6,7 +6,7 @@
 set -euo pipefail
 args=" $* "
 outputs() {
-    scrollmsg -r -t get_outputs | jq '[.[] | select(.active != false) | {
+    scrollmsg -s "${SWAYSOCK:-$SCROLLSOCK}" -r -t get_outputs | jq '[.[] | select(.active != false) | {
         id: 0, name, x: .rect.x, y: .rect.y,
         width: ((.rect.width * .scale) | round), height: ((.rect.height * .scale) | round),
         scale, focused, activeWorkspace: {name: .current_workspace}

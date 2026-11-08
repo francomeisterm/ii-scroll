@@ -117,6 +117,31 @@ Singleton {
                 lastIpcObject: o
             };
         });
+        // Windows per workspace number, for HyprlandWorkspace.toplevels (ii only reads
+        // toplevel.wayland.fullscreen / activated, title and address from it)
+        const winsByWs = {};
+        function walk(node, wsNum) {
+            if (!node)
+                return;
+            if (node.type === "workspace")
+                wsNum = node.num ?? -1;
+            if ((node.type === "con" || node.type === "floating_con") && (node.pid ?? 0) > 0) {
+                (winsByWs[wsNum] = winsByWs[wsNum] ?? []).push({
+                    address: node.id.toString(16),
+                    title: node.name ?? "",
+                    wayland: {
+                        appId: node.app_id ?? node.window_properties?.class ?? "",
+                        title: node.name ?? "",
+                        fullscreen: (node.fullscreen_mode ?? 0) > 0,
+                        activated: node.focused
+                    }
+                });
+            }
+            (node.nodes ?? []).forEach(n => walk(n, wsNum));
+            (node.floating_nodes ?? []).forEach(n => walk(n, wsNum));
+        }
+        walk(root.swayTree, -1);
+
         let wss = wsList.map(w => {
             const mon = mons.find(m => m.name === w.output) ?? null;
             return {
@@ -127,6 +152,7 @@ Singleton {
                 focused: w.focused,
                 urgent: w.urgent,
                 lastIpcObject: w,
+                toplevels: { values: winsByWs[w.num] ?? [] },
                 activate: function () { I3.dispatch(`workspace number ${w.num}`); }
             };
         });
@@ -148,7 +174,7 @@ Singleton {
 
     Process {
         id: query
-        command: ["sh", "-c", 'printf \'{"ws":%s,"out":%s,"tree":%s}\' "$(scrollmsg -r -t get_workspaces)" "$(scrollmsg -r -t get_outputs)" "$(scrollmsg -r -t get_tree)"']
+        command: ["sh", "-c", 'printf \'{"ws":%s,"out":%s,"tree":%s}\' "$(scrollmsg -s \"${SWAYSOCK:-$SCROLLSOCK}\" -r -t get_workspaces)" "$(scrollmsg -s \"${SWAYSOCK:-$SCROLLSOCK}\" -r -t get_outputs)" "$(scrollmsg -s \"${SWAYSOCK:-$SCROLLSOCK}\" -r -t get_tree)"']
         stdout: StdioCollector {
             onStreamFinished: {
                 try {

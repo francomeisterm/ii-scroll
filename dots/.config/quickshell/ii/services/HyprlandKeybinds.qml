@@ -99,7 +99,7 @@ Singleton {
     Process {
         id: getKeybinds
         running: true
-        command: ["scrollmsg", "-r", "-t", "get_config"]
+        command: ["sh", "-c", 'scrollmsg -s "${SWAYSOCK:-$SCROLLSOCK}" -r -t get_config']
 
         stdout: StdioCollector {
             onStreamFinished: {

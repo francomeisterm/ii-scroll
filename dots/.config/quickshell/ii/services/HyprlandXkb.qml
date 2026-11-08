@@ -77,7 +77,7 @@ Singleton {
     Process {
         id: fetchLayoutsProc
         running: true
-        command: ["scrollmsg", "-r", "-t", "get_inputs"]
+        command: ["sh", "-c", 'scrollmsg -s "${SWAYSOCK:-$SCROLLSOCK}" -r -t get_inputs']
 
         stdout: StdioCollector {
             id: devicesCollector

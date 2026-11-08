@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.I3
 import Quickshell.Bluetooth
 import qs.modules.compat
 
@@ -268,7 +269,7 @@ Item {
                 toggled: false
                 buttonIcon: "restart_alt"
                 onClicked: {
-                    Quickshell.execDetached(["scrollmsg", "reload"])
+                    I3.dispatch("reload")
                     Quickshell.reload(true);
                 }
                 StyledToolTip {
