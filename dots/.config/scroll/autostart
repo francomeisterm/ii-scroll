@@ -1,0 +1,14 @@
+#!/bin/bash
+# Session autostart, the Scroll counterpart of hyprland.lua's hyprland.start block.
+# uwsm finalize comes first so `uwsm app` scopes get the session's sockets.
+uwsm finalize SWAYSOCK I3SOCK SCROLLSOCK XCURSOR_SIZE XCURSOR_THEME
+/usr/lib/pam_kwallet_init &
+# SDR white on the HDR output, last value set by scroll-sdr-nits (Super+F2/F3) or ii's slider (ddcutil shim).
+scroll-sdr-nits apply
+# Shell: illogical-impulse (ii) via shell-switch below. DMS (dux-shell) removed 11/9; its
+# greeter (dux-greeter-bin) stays as the login screen. ii has its own polkit agent, so
+# polkit-gnome doesn't start here (only one agent can register). Fallback if `pkexec true` shows no dialog:
+# uwsm app -- /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+# nm-applet comes from /etc/xdg/autostart (uwsm runs XDG autostart), so it isn't started here either.
+# Start commands live in ~/.local/bin/shell-switch (also --live / --restart-ii).
+"$HOME/.local/bin/shell-switch" --start

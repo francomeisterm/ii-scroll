@@ -1,0 +1,35 @@
+#!/bin/bash
+# ddcutil shim for Noctalia under Scroll, the counterpart of ~/.local/lib/noctalia-ddc/ddcutil.
+# The XG279CNS ignores DDC brightness while HDR is on, so the slider's getvcp/setvcp 10 set
+# Scroll's SDR white instead: 0-100% = 80-480 nits. Everything else is real ddcutil.
+real=/usr/bin/ddcutil
+state="$HOME/.local/state/hypr-sdr-nits"
+MIN=80 MAX=480
+
+cmd= code= val=
+args=("$@")
+for i in "${!args[@]}"; do
+    case "${args[i]}" in
+        getvcp|setvcp) cmd=${args[i]}; code=${args[i+1]}; val=${args[i+2]} ;;
+    esac
+done
+# Noctalia runs "ddcutil --noconfig detect" at startup, so ddcutilrc is skipped; its
+# probe of unsupported features (0xdd, 0x41) is expected and only spams the journal.
+[[ " $* " == *" detect "* ]] && exec "$real" --syslog NEVER "$@"
+case "${code,,}" in 10|0x10) ;; *) exec "$real" "$@" ;; esac
+scrollmsg -t get_outputs 2>/dev/null | jq -e '.[] | select(.name == "DP-1" and .hdr == true)' >/dev/null || exec "$real" "$@"
+
+if [[ $cmd == setvcp ]]; then
+    [[ $val =~ ^[0-9]+$ ]] || exec "$real" "$@"
+    nits=$(( MIN + val * (MAX - MIN) / 100 ))
+    scrollmsg sdr_nits "$nits" >/dev/null && echo "$nits" > "$state"
+else
+    nits=$(cat "$state" 2>/dev/null); nits=${nits:-400}
+    pct=$(( (nits - MIN) * 100 / (MAX - MIN) ))
+    (( pct < 0 )) && pct=0; (( pct > 100 )) && pct=100
+    if [[ " $* " == *" --brief "* || " $* " == *" -t "* || " $* " == *" --terse "* ]]; then
+        echo "VCP 10 C $pct 100"
+    else
+        echo "VCP code 0x10 (Brightness                    ): current value = $(printf '%5d' "$pct"), max value =   100"
+    fi
+fi

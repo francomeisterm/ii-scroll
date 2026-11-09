@@ -1,0 +1,45 @@
+#!/bin/bash
+# HDR SDR-white control for Scroll (hdr-sdr-nits branch `sdr_nits` command).
+# The XG279CNS locks DDC brightness while HDR is on, so Super+F2/F3 move SDR white instead.
+#   scroll-sdr-nits up|down      step by STEP (via ii's brightness IPC when ii runs, else a notification OSD)
+#   scroll-sdr-nits set N        set an absolute value
+#   scroll-sdr-nits apply        re-apply the saved value (autostart does this at login)
+#   scroll-sdr-nits get          print the saved value
+# State file is shared with the ddcutil shim (ii's brightness slider), so the value carries over.
+set -u
+state="$HOME/.local/state/hypr-sdr-nits"
+MIN=80 MAX=480 STEP=20 DEFAULT=400
+
+cur=$(cat "$state" 2>/dev/null)
+[[ $cur =~ ^[0-9]+$ ]] || cur=$DEFAULT
+
+# Under illogical-impulse (ii), let ii do up/down: its brightness slider runs ddcutil
+# through the ~/.local/lib/noctalia-ddc-scroll shim, which sets sdr_nits and this state
+# file (5% = 20 nits, same step), and ii shows its own OSD.
+case "${1:-}" in
+    up)   qs -c ii ipc call brightness increment >/dev/null 2>&1 && exit 0 ;;
+    down) qs -c ii ipc call brightness decrement >/dev/null 2>&1 && exit 0 ;;
+esac
+
+case "${1:-}" in
+    up)    new=$((cur + STEP)) ;;
+    down)  new=$((cur - STEP)) ;;
+    set)   new=${2:-}; [[ $new =~ ^[0-9]+$ ]] || { echo "usage: $0 set <nits>" >&2; exit 2; } ;;
+    apply) new=$cur ;;
+    get)   echo "$cur"; exit 0 ;;
+    *)     echo "usage: $0 up|down|set N|apply|get" >&2; exit 2 ;;
+esac
+(( new < MIN )) && new=$MIN
+(( new > MAX )) && new=$MAX
+
+scrollmsg sdr_nits "$new" >/dev/null || exit 1
+mkdir -p "${state%/*}"
+echo "$new" > "$state"
+
+# OSD for the keybinds (DMS slider sync removed 11/9 with DMS).
+if [[ $1 == up || $1 == down || $1 == set ]]; then
+    pct=$(( (new - MIN) * 100 / (MAX - MIN) ))
+    notify-send -a "SDR white" -i display-brightness \
+        -h string:x-canonical-private-synchronous:sdr-nits -h "int:value:$pct" \
+        "SDR white" "$new nits" 2>/dev/null || true
+fi

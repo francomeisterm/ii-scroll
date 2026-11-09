@@ -1,0 +1,11 @@
+# ii-on-Scroll minimal venv (python 3.14.9, `python3 -m venv` + pip, no uv).
+# Covers: colors (generate_colors_material.py, scheme_for_image.py) and
+# images (find_regions.py region selector, least_busy_region.py, text_color.py).
+# Pin materialyoucolor 2.0.10: 3.x renamed scheme attributes ->
+# KeyError 'primary_paletteKeyColor' in generate_colors_material.py.
+# 2.0.10 has no cp314 wheel; pip builds it from sdist (needs gcc/g++, worked here).
+materialyoucolor==2.0.10
+pillow==13.0.0
+numpy==2.5.4
+# contrib build is required: find_regions.py uses cv2.ximgproc (selective search).
+opencv-contrib-python-headless==5.0.0.93

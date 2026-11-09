@@ -1,0 +1,15 @@
+#!/bin/bash
+# Super+`: dropdown kitty, started on first use (was a pyprland scratchpad on Hyprland).
+# The window rule only parks it in the scratchpad; sizing has to happen once it is shown.
+match='[app_id="^kitty-dropterm$"]'
+exists() { scrollmsg -t get_tree | jq -e '.. | objects | select(.app_id? == "kitty-dropterm")' >/dev/null; }
+if exists; then
+    scrollmsg "$match scratchpad show"
+    exit
+fi
+uwsm app -- kitty --class kitty-dropterm &
+for _ in {1..50}; do
+    exists && break
+    sleep 0.1
+done
+scrollmsg "$match scratchpad show, resize set width 70 ppt height 55 ppt, move position center"

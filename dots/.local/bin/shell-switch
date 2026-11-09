@@ -1,0 +1,118 @@
+#!/bin/bash
+# Start/restart the Scroll session's shell: illogical-impulse (ii, ~/Projects/ii-scroll).
+# DMS (dux-shell) was removed 11/9; only its greeter (dux-greeter-bin) is kept.
+#   shell-switch ii         re-point ~/.config/scroll/shell.conf at shell-ii.conf
+#   shell-switch --live     stop the running shell and start it again now
+#   shell-switch --start    used by ~/.config/scroll/autostart at login
+#   shell-switch --restart-ii   restart only ii (Ctrl+Super+R)
+#   shell-switch --restart-idle restart only ii's swayidle (idle timeouts)
+#   shell-switch            print the current choice
+set -u
+dir="$HOME/.config/scroll"
+current() { echo ii; }
+
+start_ii_qs() {
+    # ddcutil shim first: ii's brightness slider runs ddcutil, which the shim turns into
+    # Scroll's sdr_nits while HDR is on. The venv holds ii's python (colors, region selector).
+    uwsm app -- env PATH="$HOME/.local/lib/noctalia-ddc-scroll:$PATH:$HOME/.spicetify" \
+        ILLOGICAL_IMPULSE_VIRTUAL_ENV="$HOME/.local/state/quickshell/.venv" qs -c ii &
+}
+
+start_ii() {
+    start_ii_qs
+    # Clipboard history for ii's clipboard overview (Super+V)
+    command -v cliphist >/dev/null && command -v wl-paste >/dev/null && uwsm app -- wl-paste --watch cliphist store &
+    start_ii_idle
+}
+
+start_ii_idle() {
+    # loginctl lock-session / suspend -> ii's lock screen.
+    # Idle: lock after 10 min, screen off after 15 min (back on at any input). No auto-suspend:
+    # this desktop runs downloads, Sunshine streams and backups unattended.
+    # Apps holding an idle inhibitor (video, fullscreen games via the steam_app rule) pause the timers.
+    local sock='scrollmsg -s "${SWAYSOCK:-$SCROLLSOCK}"'
+    command -v swayidle >/dev/null && uwsm app -- swayidle -w \
+        lock 'qs -c ii ipc call shortcut trigger lock' \
+        before-sleep 'loginctl lock-session' \
+        after-resume 'qs -c ii ipc call shortcut trigger lockFocus' \
+        timeout 600 'loginctl lock-session' \
+        timeout 900 "$sock 'output * power off'" \
+            resume "$sock 'output * power on'" &
+}
+
+stop_all() {
+    # Find the shell processes by exact argv (never pkill -f: the pattern can match this
+    # script's own shell), then stop their whole uwsm app scope. Plain kill as fallback.
+    local pids scopes p cg
+    pids=$(ps -eo pid=,args= | awk '$2=="qs" && $3=="-c" && $4=="ii" {print $1}
+        $2=="wl-paste" && $3=="--watch" {print $1}
+        $2=="swayidle" {print $1}')
+    scopes=""
+    for p in $pids; do
+        cg=$(cut -d: -f3 "/proc/$p/cgroup" 2>/dev/null); cg=${cg##*/}
+        [[ $cg == app-*.scope ]] && scopes+="$cg "
+    done
+    [[ -n $scopes ]] && systemctl --user stop $(printf '%s\n' $scopes | sort -u)
+    for p in $pids; do kill "$p" 2>/dev/null; done
+    sleep 1
+}
+
+require_ii() {
+    # ii can't load at all without these (a missing QML module fails the whole config)
+    local missing=()
+    [[ -d /usr/lib/qt6/qml/org/kde/syntaxhighlighting ]] || missing+=(syntax-highlighting)
+    fc-list | grep -qi "Material Symbols Rounded" || missing+=(ttf-material-symbols-variable)
+    command -v wl-paste >/dev/null || missing+=(wl-clipboard)
+    [[ -e $HOME/.config/quickshell/ii/shell.qml ]] || missing+=("~/.config/quickshell/ii")
+    if (( ${#missing[@]} )); then
+        echo "not switching to ii, missing: ${missing[*]}" >&2
+        exit 1
+    fi
+}
+
+case "${1:-}" in
+    ii)
+        require_ii
+        ln -sfn "shell-$1.conf" "$dir/shell.conf"
+        echo "shell for next login: $1 (use --live to switch now)"
+        ;;
+    --live)
+        stop_all
+        scrollmsg reload >/dev/null
+        "start_$(current)"
+        echo "now running: $(current)"
+        ;;
+    --restart-ii)
+        # Ctrl+Super+R: restart only ii's qs, with the same env as at login
+        for p in $(ps -eo pid=,args= | awk '$2=="qs" && $3=="-c" && $4=="ii" {print $1}'); do
+            cg=$(cut -d: -f3 "/proc/$p/cgroup" 2>/dev/null); cg=${cg##*/}
+            [[ $cg == app-*.scope ]] && systemctl --user stop "$cg"
+            kill "$p" 2>/dev/null
+        done
+        sleep 0.5
+        start_ii_qs
+        # let uwsm move qs into its own scope before this script (and its unit) exits
+        sleep 2
+        ;;
+    --restart-idle)
+        # Restart only ii's swayidle (picks up timeout changes)
+        for p in $(ps -eo pid=,args= | awk '$2=="swayidle" || $2=="/usr/bin/swayidle" {print $1}'); do
+            cg=$(cut -d: -f3 "/proc/$p/cgroup" 2>/dev/null); cg=${cg##*/}
+            [[ $cg == app-*.scope ]] && systemctl --user stop "$cg"
+            kill "$p" 2>/dev/null
+        done
+        sleep 0.3
+        start_ii_idle
+        # Give uwsm time to move swayidle into its own app scope before this script exits
+        # (when run as a transient systemd unit, exiting first would take swayidle down with it).
+        sleep 2
+        ;;
+    --start)
+        "start_$(current)"
+        ;;
+    "")
+        current
+        ;;
+    *)
+        echo "usage: shell-switch [ii|--live|--start|--restart-ii|--restart-idle]" >&2; exit 2 ;;
+esac
