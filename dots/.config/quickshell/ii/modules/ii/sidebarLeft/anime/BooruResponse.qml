@@ -227,6 +227,7 @@ Rectangle {
                     delegate: BooruImage {
                         required property var modelData
                         imageData: modelData
+                        provider: root.responseData.provider
                         rowHeight: imageRow.rowHeight
                         imageRadius: imageRow.modelData.images.length == 1 ? 50 : Appearance.rounding.normal
                         // Download manually to reduce redundant requests or make sure downloading works

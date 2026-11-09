@@ -156,6 +156,12 @@ Singleton {
             "name": "Gelbooru",
             "url": "https://gelbooru.com",
             "api": "https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1",
+            // img*.gelbooru.com redirects to hotlink.php without a gelbooru.com Referer
+            // (and with a browser-like UA). Same approach as Boorusama: site Referer +
+            // honest app UA, rate-limited, fetched via curl into the preview cache.
+            "imageReferer": "https://gelbooru.com/",
+            "imageUserAgent": "illogical-impulse-booru/1.0",
+            "highQualityPreview": true,
             "description": Translation.tr("The hentai one | Great quantity, a lot of NSFW, quality varies wildly"),
             "mapFunc": (response) => {
                 response = response.post
@@ -170,7 +176,7 @@ Singleton {
                         "is_nsfw": (item.rating != 's'),
                         "md5": item.md5,
                         "preview_url": item.preview_url,
-                        "sample_url": item.sample_url ?? item.file_url,
+                        "sample_url": item.sample_url || item.file_url,
                         "file_url": item.file_url,
                         "file_ext": item.file_url.split('.').pop(),
                         "source": getWorkingImageSource(item.source) ?? item.file_url,
@@ -354,12 +360,13 @@ Singleton {
         } else {
             url += "&" + params.join("&")
         }
+        if (currentProvider == "gelbooru") url += gelbooruAuthParams()
         return url
     }
 
     function makeRequest(tags, nsfw=false, limit=20, page=1) {
         var url = constructRequestUrl(tags, nsfw, limit, page)
-        console.log("[Booru] Making request to " + url)
+        console.log("[Booru] Making request to " + redactUrl(url))
 
         const newResponse = root.booruResponseDataComponent.createObject(null, {
             "provider": currentProvider,
@@ -397,7 +404,9 @@ Singleton {
             }
             else if (xhr.readyState === XMLHttpRequest.DONE) {
                 console.log("[Booru] Request failed with status: " + xhr.status)
-                newResponse.message = root.failMessage
+                newResponse.message = (currentProvider == "gelbooru" && xhr.status == 401)
+                    ? Translation.tr("Gelbooru needs API credentials.\nSet sidebar.booru.gelbooru.apiKey and userId in config.json\n(from gelbooru.com → My Account → Options → API Access Credentials)")
+                    : root.failMessage
                 root.runningRequests--;
                 root.responses = [...root.responses, newResponse]
             }
@@ -420,6 +429,52 @@ Singleton {
         } 
     }
 
+    // Gelbooru rejects anonymous API calls (401). Credentials come from
+    // https://gelbooru.com/index.php?page=account&s=options -> "API Access Credentials".
+    function gelbooruAuthParams() {
+        const cfg = Config.options?.sidebar?.booru?.gelbooru
+        const apiKey = cfg?.apiKey ?? ""
+        const userId = cfg?.userId ?? ""
+        if (!apiKey || !userId) return ""
+        return "&api_key=" + encodeURIComponent(apiKey) + "&user_id=" + encodeURIComponent(userId)
+    }
+
+    function redactUrl(url) {
+        return url.replace(/api_key=[^&]*/, "api_key=<redacted>")
+    }
+
+    // Throttled image fetches (Gelbooru): one request start per tick, global
+    // across all result rows (~6.7/s, under Boorusama's 10 req/s window);
+    // a 429 pauses the whole queue.
+    property int fetchIntervalMs: 150
+    property int rateLimitPauseMs: 20000
+    property double fetchPausedUntil: 0
+    property var fetchQueue: []
+    function enqueueThrottledFetch(token, fn) {
+        fetchQueue.push({ token: token, fn: fn })
+        if (!fetchTimer.running) fetchTimer.start()
+    }
+    function reportRateLimited() {
+        fetchPausedUntil = Date.now() + rateLimitPauseMs
+        console.log("[Booru] Image host rate-limited us, pausing fetches for " + (rateLimitPauseMs / 1000) + "s")
+    }
+    Timer {
+        id: fetchTimer
+        interval: root.fetchIntervalMs
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (Date.now() < root.fetchPausedUntil) return
+            while (root.fetchQueue.length > 0) {
+                const job = root.fetchQueue.shift()
+                if (job.token.cancelled) continue
+                try { job.fn() } catch (e) { continue }
+                break
+            }
+            if (root.fetchQueue.length === 0) stop()
+        }
+    }
+
     property var currentTagRequest: null
     function triggerTagSearch(query) {
         if (currentTagRequest) {
@@ -434,6 +489,7 @@ Singleton {
             return
         }
         var url = provider.tagSearchTemplate.replace("{{query}}", encodeURIComponent(query))
+        if (currentProvider == "gelbooru") url += gelbooruAuthParams()
 
         var xhr = new XMLHttpRequest()
         currentTagRequest = xhr

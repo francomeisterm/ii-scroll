@@ -15,6 +15,34 @@ import qs.modules.compat
 Button {
     id: root
     property var imageData
+    property string provider: ""
+    readonly property var providerInfo: Booru.providers[root.provider] ?? {}
+    // Providers whose image host needs a Referer: load from cache, fetch via throttled curl
+    readonly property bool throttledFetch: !!root.providerInfo.imageReferer
+    // High quality = the ~850px sample (or the original if it's a still image and
+    // there's no sample); videos/animations fall back to the static thumbnail.
+    readonly property string throttledSourceUrl: {
+        if (!root.providerInfo.highQualityPreview) return root.imageData.preview_url ?? root.imageData.sample_url
+        const ext = (root.imageData.file_ext ?? "").toLowerCase()
+        const stillImage = ["jpg", "jpeg", "png", "webp"].includes(ext)
+        if (root.imageData.sample_url && (root.imageData.sample_url !== root.imageData.file_url || stillImage))
+            return root.imageData.sample_url
+        return root.imageData.preview_url
+    }
+    readonly property string cachedThumbPath: `${root.previewDownloadPath}/${root.provider}/${root.imageData.md5 || root.imageData.id}_${root.providerInfo.highQualityPreview ? "hq" : "thumb"}.${root.throttledSourceUrl.split('.').pop().split('?')[0]}`
+    property var fetchToken: ({ cancelled: false })
+    property bool fetchQueued: false
+    property int fetchAttempts: 0
+    function queueFetch() {
+        if (root.fetchQueued || root.fetchAttempts >= 3) return
+        root.fetchQueued = true
+        root.fetchAttempts++
+        Booru.enqueueThrottledFetch(root.fetchToken, () => {
+            root.fetchQueued = false
+            throttledDownloader.running = true
+        })
+    }
+    Component.onDestruction: root.fetchToken.cancelled = true
     property var rowHeight
     property bool manualDownload: false
     property string previewDownloadPath
@@ -38,6 +66,26 @@ Button {
                 modelData.width = width
                 modelData.height = height
                 modelData.aspect_ratio = width / height
+            }
+        }
+    }
+
+    ImageDownloaderProcess {
+        id: throttledDownloader
+        running: false
+        filePath: root.cachedThumbPath
+        sourceUrl: root.throttledSourceUrl
+        referer: root.providerInfo.imageReferer ?? ""
+        downloadUserAgent: root.providerInfo.imageUserAgent ?? ""
+        onDone: (path, width, height) => {
+            imageObject.source = ""
+            imageObject.source = "file://" + FileUtils.trimFileProtocol(path)
+        }
+        onFailed: (httpCode) => {
+            console.log("[Booru] Thumbnail fetch failed (HTTP " + httpCode + ")")
+            if (httpCode === 429) {
+                Booru.reportRateLimited()
+                root.queueFetch()
             }
         }
     }
@@ -66,7 +114,11 @@ Button {
             width: root.rowHeight * modelData.aspect_ratio
             height: root.rowHeight
             fillMode: Image.PreserveAspectFit
-            source: modelData.preview_url
+            source: root.throttledFetch ? "file://" + FileUtils.trimFileProtocol(root.cachedThumbPath) : modelData.preview_url
+            onStatusChanged: {
+                // Not cached yet (or unreadable) -> fetch through the throttled queue
+                if (root.throttledFetch && status === Image.Error) root.queueFetch()
+            }
 
             layer.enabled: true
             layer.effect: OpacityMask {
@@ -172,8 +224,9 @@ Button {
                             onClicked: {
                                 root.showActions = false;
                                 const targetPath = root.imageData.is_nsfw ? root.nsfwPath : root.downloadPath;
-                                const userAgent = Config.options?.networking?.userAgent ?? ""
-                                const userAgentHeader = userAgent ? ` -H 'User-Agent: ${StringUtils.shellSingleQuoteEscape(userAgent)}'` : ""
+                                const userAgent = root.throttledFetch ? (root.providerInfo.imageUserAgent ?? "") : (Config.options?.networking?.userAgent ?? "")
+                                const userAgentHeader = (userAgent ? ` -H 'User-Agent: ${StringUtils.shellSingleQuoteEscape(userAgent)}'` : "")
+                                    + (root.throttledFetch ? ` -e '${StringUtils.shellSingleQuoteEscape(root.providerInfo.imageReferer)}'` : "")
                                 Quickshell.execDetached(["bash", "-c", 
                                     `mkdir -p '${targetPath}' && curl '${StringUtils.shellSingleQuoteEscape(root.imageData.file_url)}'${userAgentHeader} -o '${targetPath}/${root.fileName}' && notify-send '${Translation.tr("Download complete")}' '${root.downloadPath}/${root.fileName}' -a 'Shell'`
                                 ])
