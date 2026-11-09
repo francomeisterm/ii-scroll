@@ -71,6 +71,25 @@ Column {
         "Slash": "/",
         "Hash": "#",
         "Return": "Enter",
+        // sway/Scroll keysym names
+        "slash": "/",
+        "period": ".",
+        "comma": ",",
+        "semicolon": ";",
+        "apostrophe": "'",
+        "grave": "`",
+        "minus": "-",
+        "equal": "=",
+        "backslash": "\\",
+        "bracketleft": "[",
+        "bracketright": "]",
+        "space": "Space",
+        "Page_Up": "PgUp",
+        "Page_Down": "PgDn",
+        "Escape": "Esc",
+        "Delete": "Del",
+        "Print": "PrtSc",
+        "XF86MonBrightnessUp": "Brightness keys",
         // "Shift": "",
       },
       !!Config.options.cheatsheet.superKey ? {
@@ -117,24 +136,21 @@ Column {
 
     function containsNonFirstRepetitive(bind) {
         const key = bind.key;
-        if (key.includes("mouse") || key.includes("page")) return false;
-        // Contains non-1 number
-        if (/\d/.test(key) && !key.includes("1")) return true;
-        // Contains non-left direction
-        if (/^(right|up|down)\b/i.test(key)) return true;
+        // Bare number keys other than 1, arrow keys other than Left
+        if (/^[02-9]$/.test(key)) return true;
+        if (/^(right|up|down)$/i.test(key)) return true;
         return false;
     }
 
     function containsFirstRepetitive(bind) {
         const key = bind.key;
-        return key.includes("1") || /left/i.test(key);
+        return key === "1" || /^left$/i.test(key);
     }
 
     function transformKey(key) {
-        const replaced = root.keySubstitutions[key] || key;
-        const denumbered = replaced.replace("1", "<Number>");
-        const dedirectioned = denumbered.replace("Left", "<Direction>");
-        return dedirectioned;
+        if (key === "1") return "<Number>";
+        if (/^left$/i.test(key)) return "<Direction>";
+        return root.keySubstitutions[key] || key;
     }
 
     function transformDescription(bind, categoryName) {
@@ -142,9 +158,13 @@ Column {
         const regex = new RegExp("\\s*" + categoryName + "\\s*:\\s*");
         const decategorized = description.replace(regex, "");
         if (!containsFirstRepetitive(bind)) return decategorized;
-        const denumbered = decategorized.replace("1", "<Number>");
-        const dedirectioned = denumbered.replace(/ \b(left|right|up|down)\b/i, " <Direction>");
-        return dedirectioned;
+        if (bind.key === "1") {
+            // "Focus workspace 1-10" -> "Focus workspace <Number>"
+            const ranged = decategorized.replace(/\b1\s*-\s*10\b/, "<Number>");
+            return ranged !== decategorized ? ranged : decategorized.replace(/\b1\b/, "<Number>");
+        }
+        // "Focus left/right" -> "Focus <Direction>"
+        return decategorized.replace(/\b(left|right|up|down)(\/(left|right|up|down))*\b/i, "<Direction>");
     }
 
     Column {
@@ -207,12 +227,14 @@ Column {
             }
             Item {
                 anchors.verticalCenter: parent.verticalCenter
-                implicitWidth: commentText.implicitWidth + root.columnSpacing
+                implicitWidth: commentText.width + root.columnSpacing
                 implicitHeight: commentText.implicitHeight
                 StyledText {
                     id: commentText
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left
+                    width: Math.min(implicitWidth, 300)
+                    elide: Text.ElideRight
                     font.pixelSize: Config.options.cheatsheet.fontSize.comment || Appearance.font.pixelSize.smaller
                     text: root.transformDescription(bindLine.keyData, bindLine.categoryName)
                 }

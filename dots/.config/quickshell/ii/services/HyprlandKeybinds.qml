@@ -62,7 +62,7 @@ Singleton {
                 continue;
             }
             if ((m = /^bind(?:sym|code)\s+((?:--\S+\s+)*)(\S+)\s+(.+)$/.exec(line))) {
-                if (m[1].includes("--release")) { pendingDesc = ""; continue; }
+                if (m[1].includes("--release")) continue;
                 let combo = m[2];
                 for (const v in vars)
                     combo = combo.split(v).join(vars[v]);
@@ -73,11 +73,13 @@ Singleton {
                 let cmd = m[3];
                 for (const v in vars)
                     cmd = cmd.split(v).join(vars[v]);
-                const text = pendingDesc.length > 0 ? pendingDesc : root.describe(cmd);
+                // Only the bind right after a "#!" line gets listed (like Hyprland's bindd);
+                // undescribed alternates (Super+T vs Super+Enter...) are hidden from the cheatsheet.
+                const text = pendingDesc;
                 binds.push({
                     key: key,
                     modmask: modmask,
-                    description: category.length > 0 ? `${category}: ${text}` : text,
+                    description: text.length === 0 ? "" : (category.length > 0 ? `${category}: ${text}` : text),
                     dispatcher: "exec",
                     arg: cmd
                 });

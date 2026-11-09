@@ -98,13 +98,22 @@ bindsym Ctrl+$mod+v exec $app pavucontrol
 bindsym Ctrl+Shift+Escape exec $app kitty -1 btop
 # Shell binds (ii), via the shell.conf symlink -> shell-ii.conf
 include ~/.config/scroll/shell.conf
+### Utilities
+#! Record screen (GPU Screen Recorder)
 bindsym Ctrl+Alt+r exec ~/.local/bin/gsr-toggle.sh
+### Session
+#! Log out
 bindsym $mod+Shift+e exec uwsm stop
+#! Reload Scroll config
 bindsym $mod+Shift+c reload
 
 # VRR toggle, HDR SDR white 80-480 nits (state shared with ii's slider via the ddcutil shim)
+### Screen
+#! Toggle VRR
 bindsym $mod+F12 output DP-1 adaptive_sync toggle; exec notify-send VRR 'Adaptive Sync toggled'
+#! HDR brightness down
 bindsym $mod+F2 exec scroll-sdr-nits down
+#! HDR brightness up
 bindsym $mod+F3 exec scroll-sdr-nits up
 
 ### Window
@@ -124,7 +133,7 @@ bindsym $mod+Shift+Down move down
 bindsym $mod+q kill
 #! Forcefully zap a window
 bindsym $mod+Shift+Alt+q exec sh -c 'kill -9 "$(scrollmsg -t get_tree | jq ".. | objects | select(.focused? == true) | .pid")"'
-#! Adjust split ratio
+#! Shrink / grow (; and ')
 bindsym $mod+semicolon resize shrink width 10 ppt
 bindsym $mod+apostrophe resize grow width 10 ppt
 #! Float/Tile
