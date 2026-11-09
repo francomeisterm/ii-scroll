@@ -99,7 +99,7 @@ RippleButton {
                 anchors.centerIn: parent
                 active: root.menuEntry.icon.length > 0
                 sourceComponent: IconImage {
-                    asynchronous: true
+                    asynchronous: false  // sync: off-thread QIcon loads race and crash Quickshell (upstream #1028/#979, 11/9)
                     source: root.menuEntry.icon
                     implicitSize: 20
                     mipmap: true

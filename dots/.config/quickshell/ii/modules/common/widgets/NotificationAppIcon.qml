@@ -13,6 +13,13 @@ MaterialShape { // App icon
     property var urgency: NotificationUrgency.Normal
     property bool isUrgent: urgency === NotificationUrgency.Critical
     property var image: ""
+    // Chrome sends app_icon as a file:// URL (site logo, e.g. Google Chat); iconPath() only knows theme names
+    readonly property string appIconSource: {
+        const icon = String(root.appIcon ?? "");
+        if (icon.startsWith("file://")) return icon;
+        if (icon.startsWith("/")) return "file://" + icon;
+        return Quickshell.iconPath(icon, "image-missing");
+    }
     property real materialIconScale: 0.57
     property real appIconScale: 0.8
     property real smallAppIconScale: 0.49
@@ -53,8 +60,8 @@ MaterialShape { // App icon
         sourceComponent: IconImage {
             id: appIconImage
             implicitSize: root.appIconSize
-            asynchronous: true
-            source: Quickshell.iconPath(root.appIcon, "image-missing")
+            asynchronous: false  // sync: off-thread QIcon loads race and crash Quickshell (upstream #1028/#979, 11/9)
+            source: root.appIconSource
         }
     }
     Loader {
@@ -90,8 +97,8 @@ MaterialShape { // App icon
                 anchors.right: parent.right
                 sourceComponent: IconImage {
                     implicitSize: root.smallAppIconSize
-                    asynchronous: true
-                    source: Quickshell.iconPath(root.appIcon, "image-missing")
+                    asynchronous: false  // sync: off-thread QIcon loads race and crash Quickshell (upstream #1028/#979, 11/9)
+                    source: root.appIconSource
                 }
             }
         }

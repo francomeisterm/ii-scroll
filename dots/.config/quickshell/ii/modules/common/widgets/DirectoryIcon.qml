@@ -10,7 +10,7 @@ import qs.modules.common.functions
 StyledImage {
     id: root
     required property var fileModelData
-    asynchronous: true
+    asynchronous: false  // sync: off-thread QIcon loads race and crash Quickshell (upstream #1028/#979, 11/9)
     fillMode: Image.PreserveAspectFit
 
     source: {

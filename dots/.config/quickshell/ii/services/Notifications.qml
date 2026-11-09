@@ -33,6 +33,7 @@ Singleton {
         property string summary: notification?.summary ?? ""
         property double time
         property string urgency: notification?.urgency.toString() ?? "normal"
+        property bool siteIdentified: false // web notification: appIcon comes from the site, not the browser
         property Timer timer
 
         onNotificationChanged: {
@@ -179,6 +180,8 @@ Singleton {
                 }
                 root.unread++;
             }
+            root.applySiteIdentity(newNotifObject);
+            root.cacheLocalIcons(newNotifObject);
             root.notify(newNotifObject);
             // console.log(notifToString(newNotifObject));
             notifFileView.setText(stringifyList(root.list));
@@ -250,6 +253,88 @@ Singleton {
             console.log("Notification not found in server: " + id)
         }
         root.discardNotification(id);
+    }
+
+    // Browser web notifications all say "Google Chrome" (or Helium/Brave) with the browser's logo;
+    // the only hint of the real source is the origin link Chromium puts first in the body.
+    // Every site gets its own name, its favicon (scripts/notifications/site-icon.sh) and its own
+    // group. siteIdentities overrides the name and uses a theme icon instead (add more here).
+    readonly property var siteIdentities: ({
+        "chat.google.com": { "name": "Google Chat", "icon": "google-chat" },
+        "mail.google.com": { "name": "Gmail", "icon": "gmail-desktop" },
+    })
+    function applySiteIdentity(notifObj) {
+        const m = /^\s*<a href="https?:\/\/([^\/"?#]+)[^"]*">[^<]*<\/a>/.exec(String(notifObj.body ?? ""));
+        if (!m) return;
+        const host = m[1].toLowerCase();
+        const site = root.siteIdentities[host];
+        notifObj.siteIdentified = true;
+        notifObj.appName = site?.name ?? host.replace(/^www\./, "");
+        if (site?.icon) {
+            notifObj.appIcon = site.icon;
+            return;
+        }
+        siteIconComponent.createObject(root, {
+            "notif": notifObj, "host": host, "fallback": root.localIconPath(notifObj.appIcon),
+        });
+    }
+    Component {
+        id: siteIconComponent
+        Process {
+            id: siteIconProc
+            property var notif
+            property string host
+            property string fallback
+            running: true
+            command: [`${Directories.scriptPath}/notifications/site-icon.sh`.replace(/^file:\/\//, ""), host, fallback]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    const path = text.trim();
+                    if (path !== "" && siteIconProc.notif) {
+                        siteIconProc.notif.appIcon = "file://" + path;
+                        notifFileView.setText(root.stringifyList(root.list));
+                    }
+                }
+            }
+            onExited: Qt.callLater(() => siteIconProc.destroy())
+        }
+    }
+
+    // Senders like Chrome pass app_icon / image-path as files in their own temp dir and delete
+    // them soon after (Google Chat logo vanished within a minute). Copy them into the cache,
+    // named by content hash so the same site logo is stored once; drop copies older than 14 days.
+    function localIconPath(src) {
+        const s = String(src ?? "");
+        const m = /^file:\/\/(\/.+)$/.exec(s) || /^image:\/\/icon\/(\/.+)$/.exec(s) || /^(\/.+)$/.exec(s);
+        return m ? decodeURIComponent(m[1]) : "";
+    }
+    function cacheLocalIcons(notifObj) {
+        (notifObj.siteIdentified ? ["image"] : ["appIcon", "image"]).forEach((prop) => {
+            const src = root.localIconPath(notifObj[prop]);
+            if (src === "" || src.startsWith(Directories.notificationIcons + "/")) return;
+            iconCopyComponent.createObject(root, { "notif": notifObj, "prop": prop, "src": src });
+        });
+    }
+    Component {
+        id: iconCopyComponent
+        Process {
+            id: iconCopyProc
+            property var notif
+            property string prop
+            property string src
+            running: true
+            command: ["sh", "-c", 'd="$1"; mkdir -p "$d" && find "$d" -type f -mtime +14 -delete; [ -f "$2" ] || exit 1; h=$(sha1sum < "$2" | cut -c1-16); cp -n "$2" "$d/$h.png" && printf %s "$d/$h.png"', "sh", Directories.notificationIcons, src]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    const dest = text.trim();
+                    if (dest !== "" && iconCopyProc.notif) {
+                        iconCopyProc.notif[iconCopyProc.prop] = "file://" + dest;
+                        notifFileView.setText(root.stringifyList(root.list));
+                    }
+                }
+            }
+            onExited: Qt.callLater(() => iconCopyProc.destroy())
+        }
     }
 
     function triggerListChange() {

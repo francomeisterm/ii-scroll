@@ -54,7 +54,7 @@ Singleton {
     }
 
     function _wsArg(ws) {
-        const s = String(ws).replace(/^"|"$/g, "");
+        const s = String(ws).trim().replace(/^"|"$/g, "").trim();  // "2 }" used to give workspace "2 "
         // Hyprland's r±1 is numeric (and creates the workspace), unlike sway's next/prev
         const rel = /^[re]?([+-]\d+)$/.exec(s);
         if (rel) {
