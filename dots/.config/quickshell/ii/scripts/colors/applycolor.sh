@@ -45,7 +45,8 @@ apply_kitty() {
   if ! pgrep -f kitty >/dev/null; then
     return
   fi
-  kill -SIGUSR1 $(pidof kitty)
+  # Scroll port: IFS is newline-only above, so $(pidof kitty) never splits; signal by name
+  pkill -USR1 -x kitty
 }
 
 apply_anyterm() {
