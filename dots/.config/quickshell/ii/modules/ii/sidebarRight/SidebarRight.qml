@@ -13,7 +13,19 @@ Scope {
 
     PanelWindow {
         id: panelWindow
-        visible: GlobalStates.sidebarRightOpen
+        // Scroll port: Hyprland slides layer surfaces in/out (layer_rule "slide right");
+        // Scroll only animates layer resizes, so slide the content here and keep the
+        // surface mapped until the exit slide finishes.
+        property real reveal: GlobalStates.sidebarRightOpen ? 1 : 0
+        readonly property real slideOffset: (1 - reveal) * sidebarWidth
+        Behavior on reveal {
+            NumberAnimation {
+                duration: GlobalStates.sidebarRightOpen ? Appearance.animation.elementMoveEnter.duration : Appearance.animation.elementMoveExit.duration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: GlobalStates.sidebarRightOpen ? Appearance.animation.elementMoveEnter.bezierCurve : Appearance.animation.elementMoveExit.bezierCurve
+            }
+        }
+        visible: GlobalStates.sidebarRightOpen || reveal > 0
 
         function hide() {
             GlobalStates.sidebarRightOpen = false;
@@ -31,11 +43,19 @@ Scope {
             bottom: true
         }
 
-        onVisibleChanged: {
-            if (visible) {
+        // Grab follows the open state, not visibility (visible lags during the exit slide)
+        function syncFocusGrab() {
+            if (GlobalStates.sidebarRightOpen && visible) {
                 GlobalFocusGrab.addDismissable(panelWindow);
             } else {
                 GlobalFocusGrab.removeDismissable(panelWindow);
+            }
+        }
+        onVisibleChanged: syncFocusGrab()
+        Connections {
+            target: GlobalStates
+            function onSidebarRightOpenChanged() {
+                panelWindow.syncFocusGrab();
             }
         }
         Connections {
@@ -47,11 +67,12 @@ Scope {
 
         Loader {
             id: sidebarContentLoader
-            active: GlobalStates.sidebarRightOpen || Config?.options.sidebar.keepRightSidebarLoaded
+            active: panelWindow.visible || Config?.options.sidebar.keepRightSidebarLoaded
             anchors {
                 fill: parent
                 margins: Appearance.sizes.hyprlandGapsOut
-                leftMargin: Appearance.sizes.elevationMargin
+                leftMargin: Appearance.sizes.elevationMargin + panelWindow.slideOffset
+                rightMargin: Appearance.sizes.hyprlandGapsOut - panelWindow.slideOffset
             }
             width: sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
             height: parent.height - Appearance.sizes.hyprlandGapsOut * 2

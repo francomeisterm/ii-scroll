@@ -87,7 +87,18 @@ Scope { // Scope
         
         sourceComponent: PanelWindow { // Window
             id: panelWindow
-            visible: GlobalStates.sidebarLeftOpen
+            // Scroll port: Hyprland slides layer surfaces in/out (layer_rule "slide left");
+            // Scroll only animates layer resizes, so slide the content here and keep the
+            // surface mapped until the exit slide finishes.
+            property real reveal: GlobalStates.sidebarLeftOpen ? 1 : 0
+            Behavior on reveal {
+                NumberAnimation {
+                    duration: GlobalStates.sidebarLeftOpen ? Appearance.animation.elementMoveEnter.duration : Appearance.animation.elementMoveExit.duration
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: GlobalStates.sidebarLeftOpen ? Appearance.animation.elementMoveEnter.bezierCurve : Appearance.animation.elementMoveExit.bezierCurve
+                }
+            }
+            visible: GlobalStates.sidebarLeftOpen || reveal > 0
             
             property bool extend: false
             property real sidebarWidth: panelWindow.extend ? Appearance.sizes.sidebarWidthExtended : Appearance.sizes.sidebarWidth
@@ -102,7 +113,7 @@ Scope { // Scope
             implicitWidth: Appearance.sizes.sidebarWidthExtended + Appearance.sizes.elevationMargin
             WlrLayershell.namespace: "quickshell:sidebarLeft"
             // Hyprland 0.49: OnDemand is Exclusive, Exclusive just breaks click-outside-to-close
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+            WlrLayershell.keyboardFocus: GlobalStates.sidebarLeftOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
             color: "transparent"
 
             anchors {
@@ -115,11 +126,19 @@ Scope { // Scope
                 item: sidebarLeftBackground
             }
 
-            onVisibleChanged: {
-                if (visible) {
+            // Grab follows the open state, not visibility (visible lags during the exit slide)
+            function syncFocusGrab() {
+                if (GlobalStates.sidebarLeftOpen && visible) {
                     GlobalFocusGrab.addDismissable(panelWindow);
                 } else {
                     GlobalFocusGrab.removeDismissable(panelWindow);
+                }
+            }
+            onVisibleChanged: syncFocusGrab()
+            Connections {
+                target: GlobalStates
+                function onSidebarLeftOpenChanged() {
+                    panelWindow.syncFocusGrab();
                 }
             }
             Connections {
@@ -139,7 +158,7 @@ Scope { // Scope
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.topMargin: Appearance.sizes.hyprlandGapsOut
-                anchors.leftMargin: Appearance.sizes.hyprlandGapsOut
+                anchors.leftMargin: Appearance.sizes.hyprlandGapsOut - (1 - panelWindow.reveal) * panelWindow.sidebarWidth
                 width: panelWindow.sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
                 height: parent.height - Appearance.sizes.hyprlandGapsOut * 2
                 color: Appearance.colors.colLayer0
