@@ -15,6 +15,27 @@ Scope {
 
     required property Component lockSurface
     property alias context: lockContext
+
+    // Scroll port: the lock wallpaper used to be decoded from scratch (full 4K, uncached) on
+    // every lock, so the lock surface stayed transparent - black on wlroots - until it loaded.
+    // Decode it at screen size, cache it, and keep a hidden reference loaded while unlocked so
+    // the lock surface gets it from the pixmap cache on its first frame.
+    readonly property string lockWallpaperPath: {
+        const p = Config.options.background.wallpaperPath;
+        return /\.(mp4|webm|mkv|avi|mov)$/i.test(p) ? Config.options.background.thumbnailPath : p;
+    }
+    function lockWallpaperSize(screen) {
+        const s = screen ?? Quickshell.screens[0];
+        return s ? Qt.size(s.width, s.height) : Qt.size(1920, 1080);
+    }
+    Image {
+        visible: false
+        source: root.lockWallpaperPath
+        sourceSize: root.lockWallpaperSize(null)
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        cache: true
+    }
     property Component sessionLockSurface: WlSessionLockSurface {
         id: sessionLockSurface
         color: "transparent"
@@ -25,17 +46,14 @@ Scope {
         Item {
             id: lockWallpaperBox
             anchors.fill: parent
-            readonly property string wallpaperPath: {
-                const p = Config.options.background.wallpaperPath;
-                return /\.(mp4|webm|mkv|avi|mov)$/i.test(p) ? Config.options.background.thumbnailPath : p;
-            }
             Image {
                 id: lockWallpaper
                 anchors.fill: parent
-                source: lockWallpaperBox.wallpaperPath
+                source: root.lockWallpaperPath
+                sourceSize: root.lockWallpaperSize(sessionLockSurface.screen)
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                cache: false
+                cache: true
                 visible: !Config.options.lock.blur.enable
             }
             GaussianBlur {
