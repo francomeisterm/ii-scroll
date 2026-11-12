@@ -10,6 +10,9 @@ set $browser helium-browser
 
 # 240Hz, not 360: 360Hz 10-bit HDR uses ~98.7% of DP 1.4 bandwidth (see monitors.lua).
 # adaptive_sync fullscreen comes from the local patch, older builds read it as off.
+# ii draws the wallpaper; without this Scroll logs "failed to execute 'swaybg'" on every (re)load.
+swaybg_command -
+
 output DP-1 {
     mode 1920x1080@240Hz
     position 0 0

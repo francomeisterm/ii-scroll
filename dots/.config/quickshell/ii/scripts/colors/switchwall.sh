@@ -111,9 +111,10 @@ check_and_prompt_upscale() {
     fi
 }
 
-CUSTOM_DIR="$XDG_CONFIG_HOME/hypr/custom"
 # Scroll port: no ~/.config/hypr here; keep the video-wallpaper restore script in ii's state dir
 RESTORE_SCRIPT_DIR="$STATE_DIR/user/scroll"
+# Scroll port: CookieClock watches this file; without the Gemini categorizer it never gets written
+mkdir -p "$STATE_DIR/user/generated/wallpaper"; [ -e "$STATE_DIR/user/generated/wallpaper/category.txt" ] || : > "$STATE_DIR/user/generated/wallpaper/category.txt"
 mkdir -p "$RESTORE_SCRIPT_DIR"
 RESTORE_SCRIPT="$RESTORE_SCRIPT_DIR/__restore_video_wallpaper.sh"
 THUMBNAIL_DIR="$RESTORE_SCRIPT_DIR/mpvpaper_thumbnails"

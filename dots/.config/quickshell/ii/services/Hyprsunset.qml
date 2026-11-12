@@ -116,7 +116,7 @@ Singleton {
     }
 
     onEffectiveTemperatureChanged: {
-        console.warn(`[Hyprsunset] temperature -> ${root.effectiveTemperature}`);
+        console.log(`[Hyprsunset] temperature -> ${root.effectiveTemperature}`);
         restartGammastep();
     }
 

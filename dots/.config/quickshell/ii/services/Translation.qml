@@ -58,6 +58,7 @@ Singleton {
     TranslationReader {
         id: translationFileView
         translationsDir: root.translationsDir
+        available: root.availableLanguages
         languageCode: root.languageCode
         onContentLoaded: (data) => {
             root.translations = data;
@@ -68,6 +69,7 @@ Singleton {
     TranslationReader {
         id: generatedTranslationFileView
         translationsDir: root.generatedTranslationsDir
+        available: root.availableGeneratedLanguages
         languageCode: root.languageCode
         onContentLoaded: (data) => {
             root.generatedTranslations = data;
@@ -119,10 +121,17 @@ Singleton {
         id: translationReader
         required property string translationsDir
         property string languageCode: root.languageCode
+        property list<string> available: []
         signal contentLoaded(var data)
+        onAvailableChanged: reread()
 
         function reread() { // Proper reload in case the file was incorrect before
             translationReader.path = "";
+            // No file for this language (e.g. en_PH): don't try to read it, just use the source strings
+            if (!translationReader.available.includes(translationReader.languageCode)) {
+                translationReader.contentLoaded({});
+                return;
+            }
             translationReader.path = `${translationReader.translationsDir}/${translationReader.languageCode}.json`;
             translationReader.reload();
         }

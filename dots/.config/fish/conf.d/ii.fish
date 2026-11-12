@@ -10,8 +10,10 @@ if status is-interactive
         enable_transience
     end
 
-    # Wallpaper-generated terminal colors
-    if test -f ~/.local/state/quickshell/user/generated/terminal/sequences.txt
+    # Wallpaper-generated terminal colors. kitty already gets them (all 256, incl. the
+    # 232-255 ones starship uses) from generated/terminal/kitty-theme.conf, and it logs a
+    # [PARSE ERROR] for the urxvt-style OSC 708/13-17 codes in sequences.txt, so skip it there.
+    if test "$TERM" != xterm-kitty; and test -f ~/.local/state/quickshell/user/generated/terminal/sequences.txt
         cat ~/.local/state/quickshell/user/generated/terminal/sequences.txt
     end
 
