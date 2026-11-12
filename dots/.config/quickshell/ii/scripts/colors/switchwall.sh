@@ -33,7 +33,11 @@ handle_kde_material_you_colors() {
             kde_scheme_variant="scheme-tonal-spot" # default
             ;;
     esac
-    "$XDG_CONFIG_HOME"/matugen/templates/kde/kde-material-you-colors-wrapper.sh --scheme-variant "$kde_scheme_variant"
+    # Scroll port: Qt apps are themed through the qt6ct palette template (matugen/config.toml);
+    # the KDE wrapper only runs if someone installed upstream's ~/.config/matugen.
+    local kde_wrapper="$XDG_CONFIG_HOME/matugen/templates/kde/kde-material-you-colors-wrapper.sh"
+    [[ -x "$kde_wrapper" ]] || return 0
+    "$kde_wrapper" --scheme-variant "$kde_scheme_variant"
 }
 
 pre_process() {

@@ -1,6 +1,8 @@
 # ii-on-Scroll: trimmed matugen config (tested with matugen 4.2.0, repo pkg).
-# Only ii-internal outputs under ~/.local/state/quickshell. gtk3/gtk4, hypr,
-# hyprlock and fuzzel outputs are dropped on purpose.
+# ii-internal outputs under ~/.local/state/quickshell, plus app theming:
+# gtk3/gtk4 (adw-gtk3 / libadwaita), fuzzel, and a qt6ct palette (replaces
+# upstream's kde-material-you-colors route, which needs the KDE platform theme).
+# hypr and hyprlock outputs are dropped on purpose.
 # input_path is relative to THIS file's directory (verified on 4.2.0), so keep
 # templates/ next to it, or switch to '~/.config/matugen/templates/...' on install.
 # Template syntax ({{colors.X.default.hex}}, {{image}}) is unchanged from upstream.
@@ -19,3 +21,25 @@ output_path = '~/.local/state/quickshell/user/generated/color.txt'
 [templates.wallpaper]
 input_path = 'templates/wallpaper.txt'
 output_path = '~/.local/state/quickshell/user/generated/wallpaper/path.txt'
+
+[templates.gtk3]
+input_path = 'templates/gtk-3.0/gtk.css'
+output_path = '~/.config/gtk-3.0/gtk.css'
+
+[templates.gtk4]
+input_path = 'templates/gtk-4.0/gtk.css'
+output_path = '~/.config/gtk-4.0/gtk.css'
+
+[templates.fuzzel]
+input_path = 'templates/fuzzel/fuzzel_theme.ini'
+output_path = '~/.config/fuzzel/fuzzel_theme.ini'
+
+# qt6ct re-reads its palette when qt6ct.conf changes, hence the touch (only if
+# the file exists, so a machine without qt6ct doesn't get an empty one).
+# To use it, set in ~/.config/qt6ct/qt6ct.conf under [Appearance]:
+#   custom_palette=true
+#   color_scheme_path=<home>/.config/qt6ct/colors/ii-matugen.conf
+[templates.qt6ct]
+input_path = 'templates/qt/qt6ct-colors.conf'
+output_path = '~/.config/qt6ct/colors/ii-matugen.conf'
+post_hook = '[ ! -f ~/.config/qt6ct/qt6ct.conf ] || touch ~/.config/qt6ct/qt6ct.conf'

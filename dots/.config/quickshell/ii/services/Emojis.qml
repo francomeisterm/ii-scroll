@@ -12,7 +12,8 @@ import Quickshell.Io
  */
 Singleton {
     id: root
-    property string emojiScriptPath: `${Directories.config}/hypr/hyprland/scripts/fuzzel-emoji.sh`
+    // Scroll port: the emoji data lives in the fuzzel fallback script under ~/.config/scroll (no ~/.config/hypr here)
+    property string emojiScriptPath: `${Directories.config}/scroll/scripts/fuzzel-emoji.sh`
 	property string lineBeforeData: "### DATA ###"
     property list<var> list
     readonly property var preparedEntries: list.map(a => ({
