@@ -28,6 +28,7 @@ Singleton {
     property real autoBackgroundTransparency: { // y = 0.5768x^2 - 0.759x + 0.2896
         let x = wallpaperVibrancy
         let y = 0.5768 * (x * x) - 0.759 * (x) + 0.2896
+        if (isNaN(y)) return 0 // Scroll port: wallpaper colour not loaded yet; alpha 0 here leaves the bar's hug corners unpainted under blur
         return Math.max(0, Math.min(0.22, y)) - 0.12 * (m3colors.darkmode ? 0 : 1)
     }
     property real autoContentTransparency: 0.9
