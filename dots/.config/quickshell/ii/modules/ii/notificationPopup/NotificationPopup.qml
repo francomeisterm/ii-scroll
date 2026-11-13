@@ -32,8 +32,8 @@ Scope {
 
         color: "transparent"
 
-        // Scroll: blur behind each popup card (see BlurRegion). One region per list row;
-        // itemAtIndex() is not a binding, so count/contentHeight re-run it when rows change.
+        // Scroll: blur behind each popup card (see BlurRegion). The cards register
+        // themselves in listview.blurTargets, one region each.
         BackgroundEffect.blurRegion: Region {
             regions: {
                 const list = [];
@@ -43,10 +43,10 @@ Scope {
         }
         Instantiator {
             id: popupBlurRegions
-            model: listview.count
+            model: listview.blurTargets
             delegate: BlurRegion {
-                required property int index
-                target: (listview.count, listview.contentHeight, listview.itemAtIndex(index))?.blurTarget ?? null
+                required property var modelData
+                target: modelData
             }
         }
         implicitWidth: Appearance.sizes.notificationPopupWidth
