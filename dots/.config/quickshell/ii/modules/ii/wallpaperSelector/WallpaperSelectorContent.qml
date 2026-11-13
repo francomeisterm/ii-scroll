@@ -114,6 +114,7 @@ MouseArea {
     StyledRectangularShadow {
         target: wallpaperGridBackground
     }
+    property alias blurTarget: wallpaperGridBackground // Scroll: for the selector's blur region
     Rectangle {
         id: wallpaperGridBackground
         anchors {

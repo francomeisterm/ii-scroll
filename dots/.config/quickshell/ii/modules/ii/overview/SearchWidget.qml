@@ -100,6 +100,7 @@ Item { // Wrapper
     StyledRectangularShadow {
         target: searchWidgetContent
     }
+    property alias blurTarget: searchWidgetContent // Scroll: for the overview's blur region
     Rectangle { // Background
         id: searchWidgetContent
         anchors {

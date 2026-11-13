@@ -62,6 +62,28 @@ Scope {
                 }
                 color: "transparent"
 
+                // Scroll: blur behind the bar background (ext-background-effect-v1). Hyprland does
+                // this with a layerrule; Scroll only blurs what the client asks for.
+                // Hug style: the bar plus its two concave corners (square minus a circle).
+                BackgroundEffect.blurRegion: bar.showBarBackground ? barBlurRegion : null
+                Region {
+                    id: barBlurRegion
+                    item: barBlurItem
+                    radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+                    Region { item: roundDecorators.active ? blurCornerLeft : null }
+                    Region { item: roundDecorators.active ? blurCornerRight : null }
+                    Region {
+                        item: roundDecorators.active ? blurCutLeft : null
+                        shape: RegionShape.Ellipse
+                        intersection: Intersection.Subtract
+                    }
+                    Region {
+                        item: roundDecorators.active ? blurCutRight : null
+                        shape: RegionShape.Ellipse
+                        intersection: Intersection.Subtract
+                    }
+                }
+
                 // Positioning
                 anchors {
                     top: !Config.options.bar.bottom
@@ -99,6 +121,37 @@ Scope {
                             topMargin: -Config.options.bar.autoHide.hoverRegionWidth
                             bottomMargin: -Config.options.bar.autoHide.hoverRegionWidth
                         }
+                    }
+
+                    // Geometry for barBlurRegion (these draw nothing)
+                    Item {
+                        id: barBlurItem
+                        anchors.fill: barContent
+                        anchors.margins: Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
+                    }
+                    Item {
+                        id: blurCornerLeft
+                        anchors { left: roundDecorators.left; top: roundDecorators.top; bottom: roundDecorators.bottom }
+                        width: Appearance.rounding.screenRounding
+                    }
+                    Item {
+                        id: blurCornerRight
+                        anchors { right: roundDecorators.right; top: roundDecorators.top; bottom: roundDecorators.bottom }
+                        width: Appearance.rounding.screenRounding
+                    }
+                    Item {
+                        id: blurCutLeft
+                        x: blurCornerLeft.x
+                        y: Config.options.bar.bottom ? roundDecorators.y - Appearance.rounding.screenRounding : roundDecorators.y
+                        width: Appearance.rounding.screenRounding * 2
+                        height: width
+                    }
+                    Item {
+                        id: blurCutRight
+                        x: blurCornerRight.x - Appearance.rounding.screenRounding
+                        y: blurCutLeft.y
+                        width: blurCutLeft.width
+                        height: width
                     }
 
                     BarContent {

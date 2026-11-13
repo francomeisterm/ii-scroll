@@ -43,6 +43,8 @@ Scope {
 
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.namespace: "quickshell:session"
+            // Scroll: blur the whole screen behind the session menu
+            BackgroundEffect.blurRegion: Region { width: sessionRoot.width; height: sessionRoot.height }
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
             color: ColorUtils.transparentize(Appearance.m3colors.m3background, Appearance.m3colors.darkmode ? 0.05 : 0.12)

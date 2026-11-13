@@ -24,6 +24,8 @@ Scope {
 
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.namespace: "quickshell:wallpaperSelector"
+            // Scroll: blur behind the background (see BlurRegion)
+            BackgroundEffect.blurRegion: BlurRegion { target: content.blurTarget }
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
             color: "transparent"

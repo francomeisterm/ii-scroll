@@ -1,6 +1,7 @@
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.widgets
 import QtQuick
 import Quickshell.Io
 import Quickshell
@@ -34,6 +35,11 @@ Scope {
         exclusiveZone: 0
         implicitWidth: sidebarWidth
         WlrLayershell.namespace: "quickshell:sidebarRight"
+        // Scroll: blur behind the background (see BlurRegion)
+        BackgroundEffect.blurRegion: BlurRegion {
+            target: sidebarContentLoader
+            radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+        }
         WlrLayershell.keyboardFocus: GlobalStates.sidebarRightOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         color: "transparent"
 

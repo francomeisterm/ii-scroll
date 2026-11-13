@@ -117,6 +117,7 @@ MouseArea { // Notification group area
         target: background
         visible: popup
     }
+    property alias blurTarget: background // Scroll: for the popup window's blur region
     Rectangle { // Background of the notification
         id: background
         anchors.left: parent.left

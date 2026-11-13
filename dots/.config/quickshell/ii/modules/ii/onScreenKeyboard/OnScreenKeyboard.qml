@@ -48,6 +48,8 @@ Scope { // Scope
             implicitWidth: oskBackground.width + Appearance.sizes.elevationMargin * 2
             implicitHeight: oskBackground.height + Appearance.sizes.elevationMargin * 2
             WlrLayershell.namespace: "quickshell:osk"
+            // Scroll: blur behind the background (see BlurRegion)
+            BackgroundEffect.blurRegion: BlurRegion { target: oskBackground }
             WlrLayershell.layer: WlrLayer.Overlay
             // Hyprland 0.49: Focus is always exclusive and setting this breaks mouse focus grab
             // WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive

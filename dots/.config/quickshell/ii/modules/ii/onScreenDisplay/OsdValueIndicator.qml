@@ -24,6 +24,7 @@ Item {
     StyledRectangularShadow {
         target: valueIndicator
     }
+    property alias blurTarget: valueIndicator // Scroll: for the OSD's blur region
     Rectangle {
         id: valueIndicator
         anchors {

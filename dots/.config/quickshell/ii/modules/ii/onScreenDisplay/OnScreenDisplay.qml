@@ -108,6 +108,8 @@ Scope {
             }
 
             WlrLayershell.namespace: "quickshell:onScreenDisplay"
+            // Scroll: blur behind the background (see BlurRegion)
+            BackgroundEffect.blurRegion: BlurRegion { target: osdIndicatorLoader.item?.blurTarget ?? null }
             WlrLayershell.layer: WlrLayer.Overlay
             anchors {
                 top: !Config.options.bar.bottom

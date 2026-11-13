@@ -23,6 +23,15 @@ Scope {
         visible: GlobalStates.overviewOpen
 
         WlrLayershell.namespace: "quickshell:overview"
+        // Scroll: blur behind the search box and the workspace overview (see BlurRegion)
+        BackgroundEffect.blurRegion: BlurRegion {
+            active: GlobalStates.overviewOpen
+            target: searchWidget.blurTarget
+            BlurRegion {
+                active: GlobalStates.overviewOpen && overviewLoader.visible
+                target: overviewLoader.item?.blurTarget ?? null
+            }
+        }
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.keyboardFocus: GlobalStates.overviewOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         color: "transparent"

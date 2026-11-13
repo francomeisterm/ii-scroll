@@ -71,6 +71,7 @@ Item {
     StyledRectangularShadow {
         target: overviewBackground
     }
+    property alias blurTarget: overviewBackground // Scroll: for the overview's blur region
     Rectangle { // Background
         id: overviewBackground
         property real padding: 10
