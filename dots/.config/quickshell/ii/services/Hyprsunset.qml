@@ -93,7 +93,9 @@ Singleton {
 
     Process {
         id: gammastepProc
-        running: root.needsGammastep
+        // Driven only by restartGammastep(). A `running: root.needsGammastep` binding here was
+        // destroyed by the first imperative assignment, so "off" never stopped the process.
+        running: false
         command: ["gammastep", "-m", "wayland", "-P", "-O", `${root.effectiveTemperature}`, "-b", `${(root.gamma / 100).toFixed(2)}`]
         onExited: (code, status) => {
             // 15 = our own SIGTERM on restart/stop
@@ -103,11 +105,15 @@ Singleton {
     }
 
     function restartGammastep() {
-        if (!root.needsGammastep)
-            return;
         gammastepProc.running = false;
-        restartTimer.restart();
+        if (root.needsGammastep)
+            restartTimer.restart();
+        else
+            restartTimer.stop();
     }
+
+    onNeedsGammastepChanged: restartGammastep()
+    Component.onCompleted: restartGammastep()
 
     Timer {
         id: restartTimer
