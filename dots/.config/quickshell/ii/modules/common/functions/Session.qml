@@ -26,7 +26,9 @@ Singleton {
 
     function logout() {
         closeAllWindows();
-        Quickshell.execDetached(["pkill", "-i", "Hyprland"]);
+        // Scroll port: end the uwsm session (falls back to exiting Scroll directly),
+        // same as wlogout's logout
+        Quickshell.execDetached(["bash", "-c", "uwsm stop || scrollmsg exit"]);
     }
 
     function launchTaskManager() {
