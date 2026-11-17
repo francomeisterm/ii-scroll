@@ -266,6 +266,8 @@ Singleton {
                     property int showNumberDelay: 300 // milliseconds
                     property list<string> numberMap: ["1", "2"] // Characters to show instead of numbers on workspace indicator
                     property bool useNerdFont: false
+                    property bool previewOnHover: true // Scroll port: workspace preview under the bar
+                    property int previewDelay: 250 // milliseconds
                 }
                 property JsonObject weather: JsonObject {
                     property bool enable: false

@@ -76,6 +76,30 @@ ButtonMouseArea {
             Hyprland.dispatch(`hl.dsp.focus({workspace = "r-1"})`);
     }
 
+    // Scroll port: preview of the hovered workspace (occupied, not the current one)
+    property bool previewReady: false
+    readonly property int hoveredWorkspaceId: wsModel.getWorkspaceIdAt(hoverIndex)
+    readonly property bool previewWanted: containsMouse && !vertical && !GlobalStates.overviewOpen
+        && (Config.options?.bar.workspaces.previewOnHover ?? true)
+        && hoverIndex >= 0 && hoverIndex < wsModel.shownCount
+        && !!wsModel.occupied[hoverIndex] && hoveredWorkspaceId !== monitor?.activeWorkspace?.id
+    onPreviewWantedChanged: {
+        if (previewWanted) previewTimer.restart();
+        else { previewTimer.stop(); previewReady = false; }
+    }
+    Timer {
+        id: previewTimer
+        interval: Config.options?.bar.workspaces.previewDelay ?? 250
+        onTriggered: root.previewReady = true
+    }
+    WorkspacePreview {
+        hoverTarget: root
+        monitor: root.monitor
+        workspaceId: root.hoveredWorkspaceId
+        anchorCenterX: (root.hoverIndex + 0.5) * root.workspaceButtonWidth
+        shown: root.previewWanted && root.previewReady
+    }
+
     // Indications
     Item {
         id: regularWorkspaces
