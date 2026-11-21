@@ -24,11 +24,17 @@ output DP-1 {
 }
 
 ### Look and feel
-default_border pixel 2
-default_floating_border pixel 2
+# Sizes match ii upstream general.lua (11/22): gaps_in 4, gaps_out 5, border_size 1, rounding 18.
+# Scroll adds the inner gap at the screen edge too, so outer 1 + inner 4 = Hyprland's gaps_out 5.
+# No rounding_power here, so corners are round, not ii's 2.5 squircle.
+# Was: border 2, outer 8 (12 px edge), radius 10, shadow size 4 blur 3 offset 0 0 #1a1a1aee.
+default_border pixel 1
+default_floating_border pixel 1
 gaps inner 4
-gaps outer 8
-default_decoration border_radius 10 shadow true shadow_dynamic false shadow_size 4 shadow_blur 3 shadow_offset 0 0 shadow_color #1a1a1aee dim false
+gaps outer 1
+# Shadow based on ii's (range 20, offset 0 2, rgba(00000020)), but twice as dark (#00000040, 11/22).
+# Dim like ii's dim_inactive / dim_strength 0.05: unfocused windows get 5% black (0x0D).
+default_decoration border_radius 18 shadow true shadow_dynamic false shadow_size 20 shadow_blur 20 shadow_offset 0 2 shadow_color #00000040 dim true dim_color #0000000D
 client.focused          #89b4fa #1e1e2e #e0e0e0 #89b4fa #89b4fa
 client.focused_inactive #595959 #1e1e2e #e0e0e0 #595959 #595959
 client.unfocused        #595959 #1e1e2e #e0e0e0 #595959 #595959
@@ -52,11 +58,17 @@ seat seat0 xcursor_theme capitaine-cursors 24
 # Plasma-like speed, same outCubic curve as Hyprland
 animations {
     enabled yes
+    # Old window content fades into the new one while resizing (upstream 11/20, default yes).
+    # `crossfade no` drops the old content as soon as the client sends a new frame.
+    crossfade yes
     style scale
     default yes 150 var simple [ 0.33 1 0.68 1 ]
     window_open yes 100 var simple [ 0.33 1 0.68 1 ]
     window_move yes 150 var simple [ 0.33 1 0.68 1 ]
-    window_size yes 150 var simple [ 0.33 1 0.68 1 ]
+    # Decay (upstream 11/20): starts fastest and slows like friction, no fixed duration.
+    # Rate 20 ≈ 95% there in 150 ms, settles (0.5 px) in ~340 ms for a 450 px resize.
+    # Higher = shorter. Old curve: window_size yes 150 var simple [ 0.33 1 0.68 1 ]
+    window_size yes decay 20
     window_fullscreen yes 150 var simple [ 0.33 1 0.68 1 ]
     workspace_switch yes 150 var simple [ 0.33 1 0.68 1 ]
     overview yes 150 var simple [ 0.33 1 0.68 1 ]
@@ -68,6 +80,8 @@ animations {
 
 ### Input
 input type:keyboard {
+    # ii upstream numlock_by_default (11/22). Applied when the keyboard is set up, so a relogin may be needed.
+    xkb_numlock enabled
     xkb_layout us
     repeat_delay 250
     repeat_rate 40
@@ -99,11 +113,19 @@ bindsym $mod+c exec $app zeditor
 bindsym Ctrl+$mod+v exec $app pavucontrol
 #! Task manager
 bindsym Ctrl+Shift+Escape exec $app kitty -1 btop
+#! JP→EN screen translator: pick area (again = reselect)
+bindsym $mod+y exec $app jp-translate
+#! JP translator: pause / resume
+bindsym $mod+Shift+y exec jp-translate pause
+#! JP translator: quit
+bindsym $mod+Ctrl+y exec jp-translate quit
 # Shell binds (ii), via the shell.conf symlink -> shell-ii.conf
 include ~/.config/scroll/shell.conf
 ### Utilities
 #! Record screen (GPU Screen Recorder)
 bindsym Ctrl+Alt+r exec ~/.local/bin/gsr-toggle.sh
+#! Color picker >> clipboard (upstream Super+Shift+C, which is reload here)
+bindsym $mod+Shift+Alt+c exec hyprpicker -a
 ### Session
 #! Log out
 bindsym $mod+Shift+e exec uwsm stop
@@ -160,6 +182,18 @@ bindsym $mod+Alt+7 move container to workspace number 7
 bindsym $mod+Alt+8 move container to workspace number 8
 bindsym $mod+Alt+9 move container to workspace number 9
 bindsym $mod+Alt+0 move container to workspace number 10
+# Numpad too, like upstream. Keycodes so it works with numlock on or off (87-89 = KP_1-3, 83-85 = KP_4-6,
+# 79-81 = KP_7-9, 90 = KP_0).
+bindcode $mod+Alt+87 move container to workspace number 1
+bindcode $mod+Alt+88 move container to workspace number 2
+bindcode $mod+Alt+89 move container to workspace number 3
+bindcode $mod+Alt+83 move container to workspace number 4
+bindcode $mod+Alt+84 move container to workspace number 5
+bindcode $mod+Alt+85 move container to workspace number 6
+bindcode $mod+Alt+79 move container to workspace number 7
+bindcode $mod+Alt+80 move container to workspace number 8
+bindcode $mod+Alt+81 move container to workspace number 9
+bindcode $mod+Alt+90 move container to workspace number 10
 #! Send to workspace left/right
 bindsym $mod+Shift+Page_Up move container to workspace prev_on_output
 bindsym $mod+Shift+Page_Down move container to workspace next_on_output
@@ -188,6 +222,16 @@ bindsym $mod+7 workspace number 7
 bindsym $mod+8 workspace number 8
 bindsym $mod+9 workspace number 9
 bindsym $mod+0 workspace number 10
+bindcode $mod+87 workspace number 1
+bindcode $mod+88 workspace number 2
+bindcode $mod+89 workspace number 3
+bindcode $mod+83 workspace number 4
+bindcode $mod+84 workspace number 5
+bindcode $mod+85 workspace number 6
+bindcode $mod+79 workspace number 7
+bindcode $mod+80 workspace number 8
+bindcode $mod+81 workspace number 9
+bindcode $mod+90 workspace number 10
 #! Move window and follow it (not in upstream)
 bindsym $mod+Shift+1 move container to workspace number 1; workspace number 1
 bindsym $mod+Shift+2 move container to workspace number 2; workspace number 2
@@ -222,6 +266,12 @@ bindsym $mod+grave exec ~/.config/scroll/dropterm
 bindsym --locked $mod+Shift+l exec systemctl suspend
 #! Shut down
 bindsym Ctrl+Shift+Alt+$mod+Delete exec systemctl poweroff
+#! Virtual machine mode: pass every key to the VM/RDP window (again to exit)
+bindsym $mod+Alt+F1 mode virtual-machine; exec notify-send -a Scroll 'Entered Virtual Machine mode' 'Keybinds disabled. Hit Super+Alt+F1 to escape'
+# Like upstream's "virtual-machine" submap: no binds here except the way out, so every key goes to the focused window.
+mode virtual-machine {
+    bindsym $mod+Alt+F1 mode default; exec notify-send -a Scroll 'Exited Virtual Machine mode' 'Keybinds re-enabled'
+}
 
 ### Media
 bindsym --locked XF86AudioRaiseVolume exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+
@@ -243,6 +293,9 @@ bindsym --locked $mod+Shift+n exec playerctl next
 bindsym --locked $mod+Shift+b exec playerctl previous
 #! Play/pause media
 bindsym --locked $mod+Shift+p exec playerctl play-pause
+# Mouse side buttons, like upstream's Super+Shift+Alt+mouse:275/276 (back = previous, forward = next)
+bindsym --whole-window $mod+Shift+Alt+button8 exec playerctl previous
+bindsym --whole-window $mod+Shift+Alt+button9 exec playerctl next
 
 ### Window rules
 for_window [app_id="^nm-openconnect-auth-dialog$"] floating enable
@@ -252,26 +305,47 @@ for_window [class="^[Ss]team$"] floating enable
 # Dip to this opacity for this many ms on keyboard focus changes, `focus_flash off` to disable.
 focus_flash 0.85 150
 # Each pass doubles the blur size, 0 disables it. Clients can ask for blur themselves (ext-background-effect).
-blur_passes 2
+# ii upstream general.lua (11/22): size 10, passes 3, contrast 0.89, brightness 1, vibrancy 0.5, noise 0.05.
+blur_passes 3
 # size contrast brightness vibrancy noise, same values and shader as Hyprland
-blur_style 5 0.8916 0.8172 0.1696 0.0117
-# Only translucent pixels get blurred, opaque windows cost nothing.
-for_window [all] window_blur on
-# Blur showed up on Helium's address bar (11/2).
-for_window [app_id="^helium$"] window_blur off
-# Same for Google Chrome (11/4).
-for_window [app_id="^[Gg]oogle-chrome$"] window_blur off
-for_window [class="^[Gg]oogle-chrome$"] window_blur off
+blur_style 10 0.89 1 0.5 0.05
+# Like ii upstream rules.lua (no_blur on every window, 11/22): only the shell layers blur.
+# This also covers Helium/Chrome (blur on the address bar, 11/2 and 11/4) and Steam games.
+for_window [all] window_blur off
 for_window [app_id="^xdpw-chooser$"] floating enable
+
+# From ii upstream rules.lua (11/22).
+# Shadows only on floating windows, like ii's no_shadow on float = 0. Runs when a window maps,
+# so a window floated later keeps no shadow; `decoration shadow true` brings it back.
+for_window [tiling] decoration shadow false
+# ii's own windows
+for_window [title="^illogical-impulse Settings$"] floating enable
+for_window [title=".*Welcome"] floating enable
+for_window [title=".*Shell conflicts.*"] floating enable
+# Small tools: float at 45% of the screen, centered
+for_window [app_id="^(org\.pulseaudio\.)?pavucontrol$"] floating enable, resize set width 45 ppt height 45 ppt, move position center
+for_window [app_id="^nm-connection-editor$"] floating enable, resize set width 45 ppt height 45 ppt, move position center
+# File chooser. ii upstream floats the KDE portal; this system uses xdg-desktop-portal-gtk.
+for_window [app_id="^xdg-desktop-portal-gtk$"] floating enable, resize set width 60 ppt height 65 ppt, move position center
+# Picture-in-Picture: float, show on every workspace, 25% in the bottom right (ii: move 73% 72%)
+for_window [title="^([Pp]icture[- ]?[Ii]n[- ]?[Pp]icture)(.*)$"] floating enable, sticky enable, resize set width 25 ppt height 25 ppt, move position 73 ppt 72 ppt
+# "... is sharing your screen" bar: float and show on every workspace (ii also moves it to the bottom center)
+for_window [title=".*is sharing (a window|your screen).*"] floating enable, sticky enable
+
+# Small settings windows and utilities on this system: float, centered (11/22).
+# app_ids checked in a nested session, or taken from the app's .desktop id.
+for_window [app_id="^(org\.gnome\.Calculator|qt6ct|cpupower-gui|stoken-gui|solaar|xfce4-about|re\.fossplant\.songrec|com\.github\.wwmm\.easyeffects)$"] floating enable, move position center
+for_window [app_id="^thunar$" title="^Thunar Preferences$"] floating enable, move position center
+# Dialogs: Thunar copy/move progress, zenity prompts from scripts, satty (Super+Print annotate)
+for_window [app_id="^thunar$" title="^File Operation Progress$"] floating enable
+for_window [app_id="^zenity$"] floating enable
+for_window [app_id="^com\.gabm\.satty$"] floating enable, move position center
 # Scroll drops the corner radius on client-side decorated windows, so use its own border everywhere.
-for_window [all] border pixel 2
+for_window [all] border pixel 1
 
 # Steam games: real fullscreen for VRR, tearing allowed, no idle-off mid-game
-for_window [app_id="^steam_app_[0-9]+$"] fullscreen enable, allow_tearing yes, inhibit_idle fullscreen, window_blur off
-for_window [class="^steam_app_[0-9]+$"] fullscreen enable, allow_tearing yes, inhibit_idle fullscreen, window_blur off
-
-for_window [app_id="^[Ss]potify$"] opacity 0.85
-for_window [class="^[Ss]potify$"] opacity 0.85
+for_window [app_id="^steam_app_[0-9]+$"] fullscreen enable, allow_tearing yes, inhibit_idle fullscreen
+for_window [class="^steam_app_[0-9]+$"] fullscreen enable, allow_tearing yes, inhibit_idle fullscreen
 
 for_window [app_id="^kitty-dropterm$"] floating enable, move scratchpad
 

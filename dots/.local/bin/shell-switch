@@ -20,8 +20,10 @@ start_ii_qs() {
 
 start_ii() {
     start_ii_qs
-    # Clipboard history for ii's clipboard overview (Super+V)
-    command -v cliphist >/dev/null && command -v wl-paste >/dev/null && uwsm app -- wl-paste --watch cliphist store &
+    # Clipboard history for ii's clipboard overview (Super+V). After each copy, tell ii to reload
+    # the list like upstream execs.lua does: ii only notices text copies on its own, not images (11/22).
+    command -v cliphist >/dev/null && command -v wl-paste >/dev/null && uwsm app -- wl-paste --watch \
+        bash -c 'cliphist store && qs -c ii ipc call cliphistService update >/dev/null 2>&1' &
     start_ii_idle
 }
 

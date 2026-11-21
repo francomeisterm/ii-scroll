@@ -12,3 +12,6 @@ scroll-sdr-nits apply
 # nm-applet comes from /etc/xdg/autostart (uwsm runs XDG autostart), so it isn't started here either.
 # Start commands live in ~/.local/bin/shell-switch (also --live / --restart-ii).
 "$HOME/.local/bin/shell-switch" --start
+# Audio effects in the background, like ii upstream execs.lua (11/22). Service mode keeps the
+# effects running with no window; open the window from the app launcher, `easyeffects -q` quits.
+uwsm app -- easyeffects --hide-window --service-mode &

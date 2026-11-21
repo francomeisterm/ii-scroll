@@ -1,0 +1,7 @@
+# Read by uwsm for the Scroll session only (on top of ~/.config/uwsm/env).
+export WLR_RENDERER=vulkan
+# Own builds and scripts (scrollmsg, scroll, hypr-update...). uwsm exports PATH to the session and cleans it up on exit.
+export PATH="$HOME/.local/bin:$PATH"
+
+# gamescope-session leaves this empty in the user manager, which hides all portal backends.
+unset XDG_DESKTOP_PORTAL_DIR
