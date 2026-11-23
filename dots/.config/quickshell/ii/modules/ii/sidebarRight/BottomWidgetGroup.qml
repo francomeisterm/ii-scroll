@@ -42,6 +42,12 @@ Rectangle {
             "icon": "monitor_heart",
             "widget": "performance/PerformanceWidget.qml"
         },
+        {
+            "type": "recordings",
+            "name": Translation.tr("Recordings"),
+            "icon": "video_library",
+            "widget": "recordings/RecordingsWidget.qml"
+        },
     ]
 
     Behavior on implicitHeight {
