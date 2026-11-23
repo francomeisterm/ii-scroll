@@ -88,6 +88,53 @@ StyledPopup {
                     label: Translation.tr("Load:")
                     value: `${Math.round(ResourceUsage.cpuUsage * 100)}%`
                 }
+                StyledPopupValueRow {
+                    visible: !isNaN(ResourceUsage.cpuTemp)
+                    icon: "thermometer"
+                    label: Translation.tr("Temp:")
+                    value: ResourceUsage.tempString(ResourceUsage.cpuTemp)
+                }
+            }
+        }
+
+        Column {
+            visible: ResourceUsage.gpuAvailable
+            anchors.top: parent.top
+            spacing: 8
+
+            StyledPopupHeaderRow {
+                icon: "videogame_asset"
+                label: "GPU"
+            }
+            Column {
+                spacing: 4
+                StyledPopupValueRow {
+                    icon: "bolt"
+                    label: Translation.tr("Load:")
+                    value: `${Math.round(ResourceUsage.gpuUsage * 100)}%`
+                }
+                StyledPopupValueRow {
+                    icon: ResourceUsage.gpuJunctionTemp >= 95 ? "thermometer_alert" : "thermometer"
+                    label: Translation.tr("Temp:")
+                    value: `${ResourceUsage.tempString(ResourceUsage.gpuTemp)} / ${ResourceUsage.tempString(ResourceUsage.gpuJunctionTemp)}`
+                }
+                StyledPopupValueRow {
+                    icon: "memory_alt"
+                    label: Translation.tr("VRAM:")
+                    value: `${ResourceUsage.bytesToGbString(ResourceUsage.gpuVramUsed)} / ${ResourceUsage.bytesToGbString(ResourceUsage.gpuVramTotal)}`
+                }
+                StyledPopupValueRow {
+                    visible: !isNaN(ResourceUsage.gpuPower)
+                    icon: "electric_bolt"
+                    label: Translation.tr("Power:")
+                    value: `${Math.round(ResourceUsage.gpuPower)} W`
+                }
+                StyledPopupValueRow {
+                    visible: !isNaN(ResourceUsage.gpuClock)
+                    icon: "speed"
+                    label: Translation.tr("Clock:")
+                    value: `${Math.round(ResourceUsage.gpuClock)} MHz`
+                }
             }
         }
     }

@@ -247,6 +247,13 @@ MouseArea {
             text: SystemInfo.username
         }
 
+        // Weather (idea from caelestia-shell's lock screen), uses the bar's Weather service
+        IconAndTextPair {
+            visible: Config.options.lock.showWeather && Weather.data.lastRefresh !== 0
+            icon: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+            text: `${Weather.data.temp} · ${Weather.data.city}`
+        }
+
         // Keyboard layout (Xkb)
         Loader {
             Layout.rightMargin: 8

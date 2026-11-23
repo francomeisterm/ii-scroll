@@ -30,6 +30,9 @@ ShellRoot {
         Cliphist.refresh()
         Wallpapers.load()
         Updates.load()
+        Recorder.load()
+        Vpn.load()
+        if (Config.options.lock.showWeather) Weather.city // instantiate so the lock screen has data ready
     }
 
 

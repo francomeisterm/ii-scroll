@@ -21,6 +21,7 @@ import qs.modules.ii.sidebarLeft
 import qs.modules.ii.sidebarRight
 import qs.modules.ii.overlay
 import qs.modules.ii.verticalBar
+import qs.modules.ii.toasts
 import qs.modules.ii.wallpaperSelector
 
 Scope {
@@ -43,5 +44,6 @@ Scope {
     PanelLoader { component: SidebarLeft {} }
     PanelLoader { component: SidebarRight {} }
     PanelLoader { extraCondition: Config.options.bar.vertical; component: VerticalBar {} }
+    PanelLoader { component: ToastPopup {} }
     PanelLoader { component: WallpaperSelector {} }
 }

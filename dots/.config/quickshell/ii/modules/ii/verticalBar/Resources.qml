@@ -37,6 +37,14 @@ MouseArea {
             warningThreshold: Config.options.bar.resources.cpuWarningThreshold
         }
 
+        Resource {
+            Layout.alignment: Qt.AlignHCenter
+            visible: ResourceUsage.gpuAvailable
+            iconName: "videogame_asset"
+            percentage: ResourceUsage.gpuUsage
+            warningThreshold: Config.options.bar.resources.gpuWarningThreshold
+        }
+
     }
 
     Bar.ResourcesPopup {

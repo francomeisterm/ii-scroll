@@ -201,7 +201,7 @@ PanelWindow {
     Process {
         id: checkRecordingProc
         running: isRecording
-        command: ["pidof", "wf-recorder"]
+        command: ["bash", "-c", "pgrep -a -f '^gpu-screen-recorder' | grep -qv ' -r [0-9]'"]
         onExited: (exitCode, exitStatus) => {
             root.preparationDone = !screenshotProc.running
             root.recordingShouldStop = (exitCode === 0);

@@ -22,6 +22,12 @@ StyledOverlayWidget {
             "history": ResourceUsage.cpuUsageHistory,
             "maxAvailableString": ResourceUsage.maxAvailableCpuString
         },
+        ...(ResourceUsage.gpuAvailable ? [{
+            "icon": "videogame_asset",
+            "name": Translation.tr("GPU"),
+            "history": ResourceUsage.gpuUsageHistory,
+            "maxAvailableString": ResourceUsage.bytesToGbString(ResourceUsage.gpuVramTotal)
+        }] : []),
         {
             "icon": "memory",
             "name": Translation.tr("RAM"),

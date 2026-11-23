@@ -244,9 +244,11 @@ Singleton {
                 property JsonObject resources: JsonObject {
                     property bool alwaysShowSwap: true
                     property bool alwaysShowCpu: true
+                    property bool alwaysShowGpu: true
                     property int memoryWarningThreshold: 95
                     property int swapWarningThreshold: 85
                     property int cpuWarningThreshold: 90
+                    property int gpuWarningThreshold: 95
                 }
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
                 property JsonObject utilButtons: JsonObject {
@@ -383,6 +385,7 @@ Singleton {
                 }
                 property bool centerClock: true
                 property bool showLockedText: true
+                property bool showWeather: true
                 property JsonObject security: JsonObject {
                     property bool unlockKeyring: true
                     property bool requirePasswordToPower: false
@@ -555,6 +558,24 @@ Singleton {
 
             property JsonObject screenRecord: JsonObject {
                 property string savePath: Directories.videos.replace("file://","") // strip "file://"
+                // gpu-screen-recorder settings, used by scripts/videos/record.sh
+                property string codec: "hevc" // h264, hevc, av1, hevc_hdr, av1_hdr, hevc_10bit, ...
+                property string quality: "very_high" // medium, high, very_high, ultra
+                property int fps: 60
+                property string audioSource: "default_output"
+                property int replaySeconds: 30
+                property string ffmpegVideoOpts: "" // e.g. "qp=20"
+            }
+
+            property JsonObject toasts: JsonObject {
+                property bool enable: true
+                property int timeout: 2500
+            }
+
+            property JsonObject vpn: JsonObject {
+                // NetworkManager connection (any VPN or WireGuard type) the quick toggle connects to.
+                // Empty = the first VPN connection nmcli lists.
+                property string connection: ""
             }
 
             property JsonObject screenSnip: JsonObject {
