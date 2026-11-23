@@ -54,12 +54,25 @@ Singleton {
         if (!activeProc.running) activeProc.running = true;
     }
 
+    // Connects `name` (default: the preferred VPN). Another VPN that is up gets taken down first.
     function connect(name) {
         const target = name || root.preferredName;
         if (!target || upProc.running) return;
+        if (target === root.activeName) return;
         root.activatingName = target;
-        upProc.command = ["nmcli", "connection", "up", "id", target];
+        Toasts.show(Translation.tr("Connecting to %1…").arg(target), "vpn_lock", 0);
+        upProc.command = ["bash", "-c",
+            'if [ -n "$1" ]; then nmcli connection down id "$1" >/dev/null 2>&1; fi; exec nmcli connection up id "$2"',
+            "bash", root.activeName, target];
         upProc.running = true;
+    }
+    // Makes `name` the toggle's default (saved in config) and connects it
+    function select(name) {
+        if (Config.options?.vpn) Config.options.vpn.connection = name;
+        connect(name);
+    }
+    function typeLabel(type) {
+        return type === "wireguard" ? "WireGuard" : Translation.tr("VPN");
     }
     function disconnect() {
         if (!root.activeName || downProc.running) return;

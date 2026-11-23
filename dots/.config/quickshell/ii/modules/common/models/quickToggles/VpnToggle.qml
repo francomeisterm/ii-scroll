@@ -12,6 +12,7 @@ QuickToggleModel {
         : Vpn.connected ? Vpn.activeName
         : (Vpn.targetName || Translation.tr("No VPN"))
     tooltipText: Vpn.connected ? Translation.tr("Disconnect %1").arg(Vpn.activeName)
-        : Translation.tr("Connect %1").arg(Vpn.targetName)
+        : Translation.tr("Icon: connect %1 | Click: choose a VPN").arg(Vpn.targetName)
     mainAction: () => Vpn.toggle()
+    hasMenu: true // right-click: VPN picker
 }

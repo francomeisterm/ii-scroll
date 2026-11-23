@@ -19,6 +19,7 @@ DelegateChooser {
     signal openBluetoothDialog()
     signal openNightLightDialog()
     signal openWifiDialog()
+    signal openVpnDialog()
 
     role: "type"
 
@@ -272,6 +273,9 @@ DelegateChooser {
         baseCellHeight: root.baseCellHeight
         cellSpacing: root.spacing
         cellSize: modelData.size
+        onOpenMenu: {
+            root.openVpnDialog()
+        }
     } }
     DelegateChoice { roleValue: "screenRecord"; AndroidScreenRecordToggle {
         required property int index
