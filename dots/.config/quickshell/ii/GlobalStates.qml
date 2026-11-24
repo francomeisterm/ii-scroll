@@ -30,6 +30,8 @@ Singleton {
     property bool superReleaseMightTrigger: true
     property bool wallpaperSelectorOpen: false
     property bool workspaceShowNumbers: false
+    // Window info panel: set to a window address (or "focused") to toggle it; reset by the panel
+    property string windowInfoRequest: ""
 
     onSidebarRightOpenChanged: {
         if (GlobalStates.sidebarRightOpen) {

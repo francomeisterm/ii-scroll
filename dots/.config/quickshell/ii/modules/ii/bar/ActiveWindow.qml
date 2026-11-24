@@ -1,3 +1,4 @@
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -17,6 +18,16 @@ Item {
     property var biggestWindow: HyprlandData.biggestWindowForWorkspace(HyprlandData.monitors[root.monitor?.id]?.activeWorkspace.id)
 
     implicitWidth: colLayout.implicitWidth
+
+    // Right-click: window info panel for the window shown here (left-click stays the left sidebar)
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        onClicked: {
+            const shown = root.focusingThisMonitor && root.activeWindow?.activated && root.biggestWindow ? root.activeWindowAddress : (root.biggestWindow?.address ?? "");
+            GlobalStates.windowInfoRequest = shown || "focused";
+        }
+    }
 
     ColumnLayout {
         id: colLayout
