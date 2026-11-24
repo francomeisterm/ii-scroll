@@ -150,23 +150,30 @@ Scope { // Scope
                 }
             }
 
+            // Caelestia-style: no gaps, flush with the bar and the screen edge, concave corners on the inner side
+            readonly property bool hug: Config.options.sidebar.hug
+            readonly property int hugRadius: Appearance.rounding.screenRounding
+
             // Content
             StyledRectangularShadow {
                 target: sidebarLeftBackground
                 radius: sidebarLeftBackground.radius
+                visible: !panelWindow.hug
             }
             Rectangle {
                 id: sidebarLeftBackground
                 anchors.top: parent.top
                 anchors.left: parent.left
-                anchors.topMargin: Appearance.sizes.hyprlandGapsOut
-                anchors.leftMargin: Appearance.sizes.hyprlandGapsOut - (1 - panelWindow.reveal) * panelWindow.sidebarWidth
-                width: panelWindow.sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
-                height: parent.height - Appearance.sizes.hyprlandGapsOut * 2
+                anchors.topMargin: panelWindow.hug ? 0 : Appearance.sizes.hyprlandGapsOut
+                anchors.leftMargin: (panelWindow.hug ? 0 : Appearance.sizes.hyprlandGapsOut) - (1 - panelWindow.reveal) * panelWindow.sidebarWidth
+                width: panelWindow.hug ? panelWindow.sidebarWidth - panelWindow.hugRadius
+                    : panelWindow.sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
+                height: panelWindow.hug ? parent.height : parent.height - Appearance.sizes.hyprlandGapsOut * 2
                 color: Appearance.colors.colLayer0
-                border.width: 1
+                border.width: panelWindow.hug ? 0 : 1
                 border.color: Appearance.colors.colLayer0Border
-                radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+                // Hug: square, the concave corners below join it to the bar and the screen edge
+                radius: panelWindow.hug ? 0 : Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
 
                 Behavior on width {
                     animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
@@ -187,6 +194,24 @@ Scope { // Scope
                         event.accepted = true;
                     }
                 }
+            }
+            // Hug: concave corners joining the panel to the bar above and the screen edge below.
+            // Siblings, not children: the background's children get replaced by the content.
+            RoundCorner {
+                visible: panelWindow.hug
+                anchors.left: sidebarLeftBackground.right
+                anchors.top: sidebarLeftBackground.top
+                implicitSize: panelWindow.hugRadius
+                color: Appearance.colors.colLayer0
+                corner: RoundCorner.CornerEnum.TopLeft
+            }
+            RoundCorner {
+                visible: panelWindow.hug
+                anchors.left: sidebarLeftBackground.right
+                anchors.bottom: sidebarLeftBackground.bottom
+                implicitSize: panelWindow.hugRadius
+                color: Appearance.colors.colLayer0
+                corner: RoundCorner.CornerEnum.BottomLeft
             }
         }
     }

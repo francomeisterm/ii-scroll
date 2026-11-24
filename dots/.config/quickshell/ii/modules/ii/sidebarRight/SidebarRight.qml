@@ -11,6 +11,9 @@ import qs.modules.compat
 Scope {
     id: root
     property int sidebarWidth: Appearance.sizes.sidebarWidth
+    // Caelestia-style: no gaps, flush with the bar and the screen edge, concave corners on the inner side
+    readonly property bool hug: Config.options.sidebar.hug
+    readonly property int hugRadius: Appearance.rounding.screenRounding
 
     PanelWindow {
         id: panelWindow
@@ -76,9 +79,9 @@ Scope {
             active: panelWindow.visible || Config?.options.sidebar.keepRightSidebarLoaded
             anchors {
                 fill: parent
-                margins: Appearance.sizes.hyprlandGapsOut
-                leftMargin: Appearance.sizes.elevationMargin + panelWindow.slideOffset
-                rightMargin: Appearance.sizes.hyprlandGapsOut - panelWindow.slideOffset
+                margins: root.hug ? 0 : Appearance.sizes.hyprlandGapsOut
+                leftMargin: (root.hug ? root.hugRadius : Appearance.sizes.elevationMargin) + panelWindow.slideOffset
+                rightMargin: (root.hug ? 0 : Appearance.sizes.hyprlandGapsOut) - panelWindow.slideOffset
             }
             width: sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
             height: parent.height - Appearance.sizes.hyprlandGapsOut * 2
@@ -91,6 +94,24 @@ Scope {
             }
 
             sourceComponent: SidebarRightContent {}
+        }
+
+        // Hug: concave corners joining the panel to the bar above and the screen edge below
+        RoundCorner {
+            visible: root.hug && sidebarContentLoader.active
+            anchors.right: sidebarContentLoader.left
+            anchors.top: sidebarContentLoader.top
+            implicitSize: root.hugRadius
+            color: Appearance.colors.colLayer0
+            corner: RoundCorner.CornerEnum.TopRight
+        }
+        RoundCorner {
+            visible: root.hug && sidebarContentLoader.active
+            anchors.right: sidebarContentLoader.left
+            anchors.bottom: sidebarContentLoader.bottom
+            implicitSize: root.hugRadius
+            color: Appearance.colors.colLayer0
+            corner: RoundCorner.CornerEnum.BottomRight
         }
     }
 

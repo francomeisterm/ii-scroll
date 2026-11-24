@@ -272,6 +272,18 @@ ContentPage {
         icon: "notifications"
         title: Translation.tr("Notifications")
 
+        ConfigSwitch {
+            buttonIcon: "border_outer"
+            text: Translation.tr("Hug screen edge (caelestia-style)")
+            checked: Config.options.notifications.hug
+            onCheckedChanged: {
+                Config.options.notifications.hug = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Popups sit in a panel flush against the bar and the screen edge, joined by curved corners")
+            }
+        }
+
         ConfigSpinBox {
             icon: "av_timer"
             text: Translation.tr("Timeout duration (if not defined by notification) (ms)")
@@ -483,6 +495,18 @@ ContentPage {
     ContentSection {
         icon: "side_navigation"
         title: Translation.tr("Sidebars")
+
+        ConfigSwitch {
+            buttonIcon: "border_outer"
+            text: Translation.tr("Hug screen edge (caelestia-style)")
+            checked: Config.options.sidebar.hug
+            onCheckedChanged: {
+                Config.options.sidebar.hug = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("No gaps: the sidebars sit flush against the bar and the screen edge, joined by curved corners")
+            }
+        }
 
         ConfigSwitch {
             buttonIcon: "memory"

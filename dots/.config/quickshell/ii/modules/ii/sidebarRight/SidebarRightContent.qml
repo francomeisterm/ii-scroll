@@ -48,8 +48,10 @@ Item {
     implicitHeight: sidebarRightBackground.implicitHeight
     implicitWidth: sidebarRightBackground.implicitWidth
 
+    readonly property bool hug: Config.options.sidebar.hug
     StyledRectangularShadow {
         target: sidebarRightBackground
+        visible: !root.hug
     }
     Rectangle {
         id: sidebarRightBackground
@@ -58,9 +60,10 @@ Item {
         implicitHeight: parent.height - Appearance.sizes.hyprlandGapsOut * 2
         implicitWidth: sidebarWidth - Appearance.sizes.hyprlandGapsOut * 2
         color: Appearance.colors.colLayer0
-        border.width: 1
+        border.width: root.hug ? 0 : 1
         border.color: Appearance.colors.colLayer0Border
-        radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+        // Hug: square, the concave corners in SidebarRight.qml join it to the bar and the screen edge
+        radius: root.hug ? 0 : Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
 
         ColumnLayout {
             anchors.fill: parent

@@ -51,16 +51,49 @@ Scope {
         }
         implicitWidth: Appearance.sizes.notificationPopupWidth
 
+        // Caelestia-style: the popups sit in a panel flush with the bar and the screen edge,
+        // joined to them by concave corners
+        readonly property bool hug: Config.options.notifications.hug
+        readonly property int hugRadius: Appearance.rounding.screenRounding
+        readonly property int hugPadding: 8
+        Rectangle {
+            id: hugPanel
+            visible: root.hug && height > 0
+            anchors.top: parent.top
+            anchors.right: parent.right
+            width: parent.width - root.hugRadius
+            height: listview.contentHeight > 0 ? listview.contentHeight + root.hugPadding * 2 : 0
+            color: Appearance.colors.colLayer0
+            bottomLeftRadius: root.hugRadius
+            Behavior on height {
+                animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
+            }
+            RoundCorner { // joins the bar
+                anchors.right: parent.left
+                anchors.top: parent.top
+                implicitSize: root.hugRadius
+                color: Appearance.colors.colLayer0
+                corner: RoundCorner.CornerEnum.TopRight
+            }
+            RoundCorner { // joins the screen edge below
+                anchors.right: parent.right
+                anchors.top: parent.bottom
+                implicitSize: root.hugRadius
+                color: Appearance.colors.colLayer0
+                corner: RoundCorner.CornerEnum.TopRight
+            }
+        }
+
         NotificationListView {
             id: listview
             anchors {
                 top: parent.top
                 bottom: parent.bottom
                 right: parent.right
-                rightMargin: 4
-                topMargin: 4
+                rightMargin: root.hug ? root.hugPadding : 4
+                topMargin: root.hug ? root.hugPadding : 4
             }
-            implicitWidth: parent.width - Appearance.sizes.elevationMargin * 2
+            implicitWidth: root.hug ? hugPanel.width - root.hugPadding * 2 : parent.width - Appearance.sizes.elevationMargin * 2
             popup: true
         }
     }

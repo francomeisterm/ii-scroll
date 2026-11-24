@@ -414,6 +414,7 @@ Singleton {
 
             property JsonObject notifications: JsonObject {
                 property int timeout: 7000
+                property bool hug: true // Caelestia-style: popups sit in a panel flush with the bar and screen edge
                 property JsonObject monitor: JsonObject {
                     property bool enable: false
                     property string name: "" // Name of the monitor to show notifications on, like "eDP-1". Find out with 'hyprctl monitors' command
@@ -512,6 +513,7 @@ Singleton {
 
             property JsonObject sidebar: JsonObject {
                 property bool keepRightSidebarLoaded: true
+                property bool hug: true // Caelestia-style: flush with the screen edge and bar, joined by concave corners
                 property JsonObject translator: JsonObject {
                     property bool enable: false
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.
