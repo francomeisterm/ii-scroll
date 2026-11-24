@@ -570,6 +570,36 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "graphic_eq"
+        title: Translation.tr("Audio visualizer")
+
+        ConfigSwitch {
+            buttonIcon: "check"
+            text: Translation.tr("Enable")
+            checked: Config.options.background.visualizer.enable
+            onCheckedChanged: {
+                Config.options.background.visualizer.enable = checked;
+            }
+        }
+        ConfigSwitch {
+            buttonIcon: "visibility_off"
+            text: Translation.tr("Hide when the workspace has tiled windows")
+            checked: Config.options.background.visualizer.autoHide
+            onCheckedChanged: {
+                Config.options.background.visualizer.autoHide = checked;
+            }
+        }
+        ConfigSwitch {
+            buttonIcon: "play_circle"
+            text: Translation.tr("Only while media is playing (saves CPU)")
+            checked: Config.options.background.visualizer.onlyWhenPlaying
+            onCheckedChanged: {
+                Config.options.background.visualizer.onlyWhenPlaying = checked;
+            }
+        }
+    }
+
+    ContentSection {
         icon: "weather_mix"
         title: Translation.tr("Widget: Weather")
 

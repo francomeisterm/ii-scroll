@@ -162,6 +162,13 @@ Singleton {
             }
 
             property JsonObject background: JsonObject {
+                // Audio bars at the bottom of the wallpaper (from caelestia-shell)
+                property JsonObject visualizer: JsonObject {
+                    property bool enable: true
+                    property bool autoHide: true // hide while the workspace has tiled windows
+                    property bool onlyWhenPlaying: true // run cava only while an MPRIS player is playing
+                    property real opacity: 0.7
+                }
                 property JsonObject widgets: JsonObject {
                     property JsonObject clock: JsonObject {
                         property bool enable: true

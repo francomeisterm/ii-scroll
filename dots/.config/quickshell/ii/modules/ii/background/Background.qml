@@ -224,6 +224,25 @@ Variants {
                 }
             }
 
+            WallpaperVisualizer {
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+                height: parent.height * 0.4
+                screenName: bgRoot.modelData.name
+                shouldShow: {
+                    const cfg = Config.options.background.visualizer;
+                    if (!cfg.enable || GlobalStates.screenLocked || bgRoot.wallpaperSafetyTriggered)
+                        return false;
+                    if (!cfg.autoHide)
+                        return true;
+                    const wsId = bgRoot.monitor?.activeWorkspace?.id;
+                    return !HyprlandData.windowList.some(w => w.monitor == bgRoot.monitor?.id && w.workspace.id === wsId && !w.floating);
+                }
+            }
+
             WidgetCanvas {
                 id: widgetCanvas
                 width: parent.width
