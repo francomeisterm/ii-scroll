@@ -165,9 +165,14 @@ Singleton {
         running: true
         command: ["nmcli", "monitor"]
         stdout: SplitParser {
-            onRead: root.update()
+            onRead: {
+                root.update();
+                root.nmEvent();
+            }
         }
     }
+    // Scroll port: other services (Vpn) listen here instead of running their own nmcli monitor
+    signal nmEvent()
 
     Process {
         id: updateConnectionType

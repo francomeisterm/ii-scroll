@@ -38,12 +38,19 @@ Scope {
         root.targetAddress = addr;
         panelLoader.active = true;
     }
+    // A click on the bar while open first dismisses the panel (focus grab), then
+    // reaches the title's right-click handler; don't let that reopen it at once.
+    property real lastClosed: 0
     function close(): void {
+        if (panelLoader.active)
+            root.lastClosed = Date.now();
         panelLoader.active = false;
     }
     function toggle(address: string): void {
         if (panelLoader.active)
             root.close();
+        else if (Date.now() - root.lastClosed < 300)
+            return;
         else
             root.open(address);
     }

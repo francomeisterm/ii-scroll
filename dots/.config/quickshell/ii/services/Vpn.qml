@@ -141,20 +141,13 @@ Singleton {
         onExited: root.refresh()
     }
 
-    // React to NetworkManager changes (also catches connects from nm-applet / nmcli)
-    Process {
-        id: monitorProc
-        running: true
-        command: ["nmcli", "monitor"]
-        stdout: SplitParser {
-            onRead: _ => refreshDebounce.restart()
+    // React to NetworkManager changes (also catches connects from nm-applet / nmcli),
+    // through the Network service's nmcli monitor instead of a second one
+    Connections {
+        target: Network
+        function onNmEvent() {
+            refreshDebounce.restart();
         }
-        onExited: monitorRestart.start()
-    }
-    Timer {
-        id: monitorRestart
-        interval: 5000
-        onTriggered: monitorProc.running = true
     }
     Timer {
         id: refreshDebounce
