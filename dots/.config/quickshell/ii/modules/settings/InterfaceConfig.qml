@@ -207,6 +207,24 @@ ContentPage {
             }
 
             ConfigSwitch {
+                buttonIcon: "music_note"
+                text: Translation.tr("Show media controls")
+                checked: Config.options.lock.showMedia
+                onCheckedChanged: {
+                    Config.options.lock.showMedia = checked;
+                }
+            }
+
+            ConfigSwitch {
+                buttonIcon: "notifications"
+                text: Translation.tr("Show notifications (app and title only)")
+                checked: Config.options.lock.showNotifications
+                onCheckedChanged: {
+                    Config.options.lock.showNotifications = checked;
+                }
+            }
+
+            ConfigSwitch {
                 buttonIcon: "info"
                 text: Translation.tr('Show "Locked" text')
                 checked: Config.options.lock.showLockedText

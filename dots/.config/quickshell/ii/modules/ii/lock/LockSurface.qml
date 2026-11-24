@@ -228,6 +228,18 @@ MouseArea {
         }
     }
 
+    // Media card and notifications (idea from caelestia-shell's lock screen)
+    LockDock {
+        id: lockDock
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            bottom: mainIsland.top
+            bottomMargin: 16
+        }
+        scale: root.toolbarScale
+        opacity: root.toolbarOpacity
+    }
+
     // Left toolbar
     Toolbar {
         id: leftIsland

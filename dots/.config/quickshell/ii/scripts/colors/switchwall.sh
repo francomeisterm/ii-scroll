@@ -319,11 +319,22 @@ switch() {
 
     # Scroll port: ii-only matugen config (writes only under ~/.local/state/quickshell), never ~/.config/matugen
     matugen -c "$SCRIPT_DIR/matugen/config.toml" "${matugen_args[@]}"
-    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
-    python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
-        > "$STATE_DIR"/user/generated/material_colors.scss
-    deactivate
-    "$SCRIPT_DIR"/applycolor.sh
+    # Scroll port: if the venv is missing (e.g. run outside the session env) or the
+    # generator fails, keep the old material_colors.scss and skip applycolor.sh;
+    # an empty scss made applycolor send literal "$term0" escapes to every terminal.
+    local venv_activate scss_tmp
+    venv_activate="$(eval echo "${ILLOGICAL_IMPULSE_VIRTUAL_ENV:-$STATE_DIR/.venv}")/bin/activate"
+    scss_tmp="$(mktemp "$STATE_DIR/user/generated/.material_colors.XXXXXX")"
+    if [[ -f "$venv_activate" ]] && source "$venv_activate" \
+        && python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" > "$scss_tmp" \
+        && [[ -s "$scss_tmp" ]]; then
+        mv "$scss_tmp" "$STATE_DIR"/user/generated/material_colors.scss
+        "$SCRIPT_DIR"/applycolor.sh
+    else
+        rm -f "$scss_tmp"
+        echo "switchwall: material color generation failed, kept previous terminal colors" >&2
+    fi
+    declare -F deactivate >/dev/null && deactivate
 
     # Pass screen width, height, and wallpaper path to post_process
     max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"

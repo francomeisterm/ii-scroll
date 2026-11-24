@@ -43,3 +43,48 @@ output_path = '~/.config/fuzzel/fuzzel_theme.ini'
 input_path = 'templates/qt/qt6ct-colors.conf'
 output_path = '~/.config/qt6ct/colors/ii-matugen.conf'
 post_hook = '[ ! -f ~/.config/qt6ct/qt6ct.conf ] || touch ~/.config/qt6ct/qt6ct.conf'
+
+# --- App theming adapted from caelestia-dots (cli templates) ---
+# Accent hues used by the btop and cava templates. matugen harmonizes them
+# with the wallpaper's source color (blend is on by default), so they shift
+# with the scheme while staying recognizably green/red/etc. (Catppuccin Mocha base.)
+[config.custom_colors]
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+mauve = "#cba6f7"
+maroon = "#eba0ac"
+red = "#f38ba8"
+yellow = "#f9e2af"
+peach = "#fab387"
+
+# btop: select it with color_theme = "ii" in ~/.config/btop/btop.conf.
+# SIGUSR2 makes a running btop reload its theme.
+[templates.btop]
+input_path = 'templates/btop/ii.theme'
+output_path = '~/.config/btop/themes/ii.theme'
+post_hook = 'pkill -USR2 -x btop || true'
+
+# cava (terminal): ii's media-controls visualizer runs cava with its own config,
+# so this file only affects cava started by hand. SIGUSR2 reloads colors.
+[templates.cava]
+input_path = 'templates/cava/config'
+output_path = '~/.config/cava/config'
+post_hook = 'pkill -USR2 -x cava || true'
+
+# Vesktop/Vencord: colors-only recolor. Enable "ii-matugen.theme.css" under
+# Settings > Themes; Vencord reloads it on change.
+[templates.discord]
+input_path = 'templates/discord/ii-matugen.css'
+output_path = '~/.config/vesktop/themes/ii-matugen.theme.css'
+
+# Spicetify: writes an [ii] section into the active theme's color.ini (other
+# sections untouched). To use it: spicetify config color_scheme ii && spicetify apply
+# After that, wallpaper changes refresh it without restarting Spotify.
+[templates.spicetify]
+input_path = 'templates/spicetify/color-ii.ini'
+output_path = '~/.local/state/quickshell/user/generated/spicetify-color-ii.ini'
+post_hook = 'bash "$HOME/.config/quickshell/ii/scripts/colors/matugen/templates/spicetify/apply-ii-scheme.sh" "$HOME/.local/state/quickshell/user/generated/spicetify-color-ii.ini"'

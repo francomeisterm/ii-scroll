@@ -386,6 +386,9 @@ Singleton {
                 property bool centerClock: true
                 property bool showLockedText: true
                 property bool showWeather: true
+                property bool showMedia: true // media card above the password box
+                property bool showNotifications: true // app + summary only, no body or images
+                property int maxNotifications: 4
                 property JsonObject security: JsonObject {
                     property bool unlockKeyring: true
                     property bool requirePasswordToPower: false
