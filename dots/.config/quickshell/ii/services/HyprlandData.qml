@@ -89,7 +89,8 @@ Singleton {
                 focused: o.focused,
                 reserved: [r.x - o.rect.x, r.y - o.rect.y, (o.rect.x + o.rect.width) - (r.x + r.width), (o.rect.y + o.rect.height) - (r.y + r.height)],
                 activeWorkspace: cur ? { id: cur.num, name: cur.name } : { id: -1, name: "" },
-                specialWorkspace: { id: 0, name: "" },
+                // Scroll port: the named "special" workspace (~/.config/scroll/scripts/special-ws.sh)
+                specialWorkspace: cur?.name === "special" ? { id: -98, name: "special:special" } : { id: 0, name: "" },
                 hdr: o.hdr ?? false
             };
         });

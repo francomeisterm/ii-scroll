@@ -329,12 +329,25 @@ ButtonMouseArea {
             implicitWidth: root.vertical ? undirectionalWidth : undirectionalLength
             implicitHeight: root.vertical ? undirectionalLength : undirectionalWidth
 
-            StyledText {
+            // Scroll port: icon + name, so it's obvious you're on the special workspace
+            Row {
                 id: specialWsText
                 anchors.centerIn: parent
-                text: (!root.vertical ? wsModel.specialWorkspaceName : "S")
-                color: Appearance.colors.colOnPrimary
-                font.pixelSize: root.specialTextSize
+                spacing: 3
+                MaterialSymbol {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "stacks"
+                    fill: 1
+                    iconSize: root.specialTextSize * 1.5
+                    color: Appearance.colors.colOnPrimary
+                }
+                StyledText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: !root.vertical
+                    text: wsModel.specialWorkspaceName
+                    color: Appearance.colors.colOnPrimary
+                    font.pixelSize: root.specialTextSize
+                }
             }
 
             Behavior on undirectionalLength {

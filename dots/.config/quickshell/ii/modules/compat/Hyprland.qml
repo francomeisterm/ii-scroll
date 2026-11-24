@@ -81,7 +81,7 @@ Singleton {
         if ((m = /hl\.dsp\.window\.move\(\{\s*x\s*=\s*"([\d.]+)",\s*y\s*=\s*"([\d.]+)",.*window\s*=\s*"([^"]+)"/.exec(cmd)))
             return `${_target(m[3])}move position ${Math.round(parseFloat(m[1]))} ${Math.round(parseFloat(m[2]))}`;
         if (/hl\.dsp\.workspace\.toggle_special/.test(cmd))
-            return "scratchpad show";
+            return "exec ~/.config/scroll/scripts/special-ws.sh toggle"; // caelestia-style special workspace
         if ((m = /hl\.dsp\.global\("quickshell:([^"]+)"\)/.exec(cmd))) {
             GlobalShortcutRegistry.trigger(m[1]);
             return "";
@@ -115,7 +115,8 @@ Singleton {
                 height: o.rect.height,
                 scale: o.scale,
                 focused: o.focused,
-                activeWorkspace: cur ? { id: cur.num, name: cur.name } : { id: 1, name: "1" },
+                // On a named workspace (the special one) keep the last numbered one active
+                activeWorkspace: cur ? { id: cur.num, name: cur.name } : (root._lastActive[o.name] ?? { id: 1, name: "1" }),
                 lastIpcObject: o
             };
         });
@@ -158,6 +159,7 @@ Singleton {
                 activate: function () { I3.dispatch(`workspace number ${w.num}`); }
             };
         });
+        mons.forEach(m => root._lastActive[m.name] = m.activeWorkspace);
         root.monitorList = mons;
         root.workspaces.values = wss;
         const fm = mons.find(m => m.focused) ?? mons[0] ?? null;
@@ -181,6 +183,7 @@ Singleton {
     }
 
     property bool _dirty: false
+    property var _lastActive: ({}) // output name -> last numbered workspace shown on it
 
     Process {
         id: query
