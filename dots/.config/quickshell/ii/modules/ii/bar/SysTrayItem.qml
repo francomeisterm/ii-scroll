@@ -47,12 +47,19 @@ MouseArea {
         }
         active: false
         sourceComponent: SysTrayMenu {
+            id: trayMenu
             Component.onCompleted: this.open();
             trayItemMenuHandle: root.item.menu
             trayItemId: root.item.id
             anchor {
                 window: root.QsWindow.window
-                item: root
+                // Hug: anchor to the whole bar height under the icon, so the menu starts at the bar's edge
+                item: trayMenu.hug ? null : root
+                rect: {
+                    if (!trayMenu.hug) return Qt.rect(0, 0, root.width, root.height);
+                    const p = root.mapToItem(null, 0, 0);
+                    return Qt.rect(p.x, 0, root.width, Appearance.sizes.barHeight);
+                }
                 gravity: Config.options.bar.vertical
                     ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
                     : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)

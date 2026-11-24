@@ -162,6 +162,15 @@ ContentPage {
                 Config.options.tray.monochromeIcons = checked;
             }
         }
+
+        ConfigSwitch {
+            buttonIcon: "border_outer"
+            text: Translation.tr("Menus hug the bar (caelestia-style)")
+            checked: Config.options.tray.hugMenu
+            onCheckedChanged: {
+                Config.options.tray.hugMenu = checked;
+            }
+        }
     }
 
     ContentSection {

@@ -19,20 +19,27 @@ PopupWindow {
 
     color: "transparent"
     property real padding: Appearance.sizes.elevationMargin
+    // Caelestia-style: hangs from the bar with no gap, square top joined to the bar by concave
+    // corners, rounded bottom. Only for a horizontal bar at the top.
+    readonly property bool hug: Config.options.tray.hugMenu && !Config.options.bar.vertical && !Config.options.bar.bottom
+    readonly property real hugRadius: Appearance.rounding.windowRounding
+    readonly property real padX: hug ? hugRadius : padding
+    readonly property real padTop: hug ? 0 : padding
+    readonly property real padBottom: hug ? 0 : padding
 
     implicitHeight: {
         let result = 0;
         for (let child of stackView.children) {
             result = Math.max(child.implicitHeight, result);
         }
-        return result + popupBackground.padding * 2 + root.padding * 2;
+        return result + popupBackground.padding * 2 + root.padTop + root.padBottom;
     }
     implicitWidth: {
         let result = 0;
         for (let child of stackView.children) {
             result = Math.max(child.implicitWidth, result);
         }
-        return result + popupBackground.padding * 2 + root.padding * 2;
+        return result + popupBackground.padding * 2 + root.padX * 2;
     }
 
     function open() {
@@ -58,6 +65,27 @@ PopupWindow {
         StyledRectangularShadow {
             target: popupBackground
             opacity: popupBackground.opacity
+            visible: !root.hug
+        }
+
+        // Hug: concave corners joining the menu to the bar on both sides
+        RoundCorner {
+            visible: root.hug
+            opacity: popupBackground.opacity
+            anchors.right: popupBackground.left
+            anchors.top: popupBackground.top
+            implicitSize: root.hugRadius
+            color: popupBackground.color
+            corner: RoundCorner.CornerEnum.TopRight
+        }
+        RoundCorner {
+            visible: root.hug
+            opacity: popupBackground.opacity
+            anchors.left: popupBackground.right
+            anchors.top: popupBackground.top
+            implicitSize: root.hugRadius
+            color: popupBackground.color
+            corner: RoundCorner.CornerEnum.TopLeft
         }
 
         Rectangle {
@@ -70,11 +98,17 @@ PopupWindow {
                 top: Config.options.bar.vertical ? undefined : Config.options.bar.bottom ? undefined : parent.top
                 bottom: Config.options.bar.vertical ? undefined : Config.options.bar.bottom ? parent.bottom : undefined
                 margins: root.padding
+                leftMargin: root.padX
+                rightMargin: root.padX
+                topMargin: root.padTop
+                bottomMargin: root.padBottom
             }
 
             color: Appearance.colors.colLayer0
             radius: Appearance.rounding.windowRounding
-            border.width: 1
+            topLeftRadius: root.hug ? 0 : radius
+            topRightRadius: root.hug ? 0 : radius
+            border.width: root.hug ? 0 : 1
             border.color: Appearance.colors.colLayer0Border
             clip: true
 

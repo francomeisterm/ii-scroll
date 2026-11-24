@@ -483,6 +483,7 @@ Singleton {
                 property bool invertPinnedItems: true // Makes the below a whitelist for the tray and blacklist for the pinned area
                 property list<var> pinnedItems: [ "Fcitx" ]
                 property bool filterPassive: true
+                property bool hugMenu: true // Caelestia-style: menus hang from the bar, joined by concave corners (top horizontal bar only)
             }
 
             property JsonObject musicRecognition: JsonObject {
