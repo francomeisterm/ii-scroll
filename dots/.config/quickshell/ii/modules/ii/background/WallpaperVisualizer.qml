@@ -1,10 +1,10 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import Qt5Compat.GraphicalEffects
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions
 
 // Audio bars along the bottom of the wallpaper (idea from caelestia-shell's
 // background visualiser): two groups of bars, bass toward the middle, filled with
@@ -39,14 +39,18 @@ Item {
         animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
     }
 
-    // Bar shapes, used only as the mask for the gradient below
+    // Each bar draws its own slice of one shared primary -> inverse primary gradient:
+    // the bar's top takes the color at its height, the bottom is always inverse primary.
+    // No OpacityMask: a hidden (visible: false) mask source only repaints while
+    // something else animates, so the bars froze ~2 s after appearing.
     Item {
         id: bars
         anchors.fill: parent
         anchors.topMargin: root.offset
         anchors.bottomMargin: -root.offset
-        visible: false
-        layer.enabled: root.visible
+
+        readonly property color topColor: Qt.alpha(Appearance.m3colors.m3primary, root.config?.opacity ?? 0.7)
+        readonly property color bottomColor: Qt.alpha(Appearance.m3colors.m3inversePrimary, root.config?.opacity ?? 0.7)
 
         Repeater {
             model: root.barCount * 2
@@ -58,13 +62,23 @@ Item {
                 // Left group runs right-to-left so bass sits next to the middle gap
                 readonly property int valueIndex: rightSide ? slot : root.barCount - slot - 1
                 readonly property real value: Math.max(0, Math.min(1, AudioVisualizer.values[valueIndex] ?? 0))
+                readonly property real fraction: root.maxBarHeight > 0 ? height / root.maxBarHeight : 0
 
                 x: (rightSide ? root.width * 0.6 : 0) + slot * root.slotWidth + root.barSpacing / 2
                 anchors.bottom: parent.bottom
                 width: root.barWidth
                 height: value * root.maxBarHeight
                 radius: Math.min(Appearance.rounding.small, width / 2)
-                color: "white"
+                gradient: Gradient {
+                    GradientStop {
+                        position: 0
+                        color: ColorUtils.mix(bars.topColor, bars.bottomColor, bar.fraction)
+                    }
+                    GradientStop {
+                        position: 1
+                        color: bars.bottomColor
+                    }
+                }
 
                 Behavior on height {
                     NumberAnimation {
@@ -74,28 +88,5 @@ Item {
                 }
             }
         }
-    }
-
-    Rectangle {
-        id: gradientFill
-        anchors.fill: bars
-        visible: false
-        layer.enabled: root.visible
-        gradient: Gradient {
-            GradientStop {
-                position: 0
-                color: Qt.alpha(Appearance.m3colors.m3primary, root.config?.opacity ?? 0.7)
-            }
-            GradientStop {
-                position: 1
-                color: Qt.alpha(Appearance.m3colors.m3inversePrimary, root.config?.opacity ?? 0.7)
-            }
-        }
-    }
-
-    OpacityMask {
-        anchors.fill: bars
-        source: gradientFill
-        maskSource: bars
     }
 }
