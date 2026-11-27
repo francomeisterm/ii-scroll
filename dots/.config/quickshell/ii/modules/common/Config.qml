@@ -415,6 +415,7 @@ Singleton {
             property JsonObject notifications: JsonObject {
                 property int timeout: 7000
                 property bool hug: true // Caelestia-style: popups sit in a panel flush with the bar and screen edge
+                property bool hideWhenFullscreen: true // No popups while a fullscreen window (a game) is on screen; they still land in the sidebar. Critical ones still show
                 property JsonObject monitor: JsonObject {
                     property bool enable: false
                     property string name: "" // Name of the monitor to show notifications on, like "eDP-1". Find out with 'hyprctl monitors' command

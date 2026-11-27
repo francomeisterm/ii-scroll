@@ -2,6 +2,7 @@ pragma Singleton
 pragma ComponentBehavior: Bound
 
 import qs.modules.common
+import qs.modules.compat
 import qs
 import QtQuick
 import Quickshell
@@ -80,6 +81,9 @@ Singleton {
     property list<Notif> list: []
     property var popupList: list.filter((notif) => notif.popup);
     property bool popupInhibited: (GlobalStates?.sidebarRightOpen ?? false) || silent
+    // A fullscreen window on a visible workspace (a game): hold non-critical popups
+    property bool fullscreenActive: Hyprland.workspaces.values.some(ws => ws.active && ws.toplevels.values.some(win => win.wayland?.fullscreen))
+    property bool fullscreenInhibited: fullscreenActive && (Config.options?.notifications.hideWhenFullscreen ?? true)
     property var latestTimeForApp: ({})
     Component {
         id: notifComponent
@@ -169,8 +173,11 @@ Singleton {
             });
 			root.list = [...root.list, newNotifObject];
 
-            // Popup
-            if (!root.popupInhibited) {
+            // Popup. While fullscreen, a non-critical one only goes to the list and the unread count
+            const heldForFullscreen = root.fullscreenInhibited && notification.urgency !== NotificationUrgency.Critical;
+            if (!root.popupInhibited && heldForFullscreen) {
+                root.unread++;
+            } else if (!root.popupInhibited) {
                 newNotifObject.popup = true;
                 if (notification.expireTimeout != 0) {
                     newNotifObject.timer = notifTimerComponent.createObject(root, {

@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Services.Notifications
 import qs.modules.compat
 
 Scope {
@@ -13,7 +14,9 @@ Scope {
 
     PanelWindow {
         id: root
+        // Popups already up when a game goes fullscreen are hidden too (their timers keep running); critical ones stay
         visible: (Notifications.popupList.length > 0) && !GlobalStates.screenLocked
+            && !(Notifications.fullscreenInhibited && !Notifications.popupList.some(n => n.urgency === NotificationUrgency.Critical.toString()))
         screen: Quickshell.screens.find(s => Config.options.notifications.forceMonitor?.enable ? s.name === Config.options.notifications.forceMonitor.name : s.name === Hyprland.focusedMonitor?.name) ?? null
 
         WlrLayershell.namespace: "quickshell:notificationPopup"
